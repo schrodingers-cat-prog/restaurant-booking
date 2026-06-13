@@ -1,0 +1,1616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ichiraku Ramen - Premium Ordering & Booking</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Space Grotesk for Headings, Plus Jakarta Sans for Body -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'gold-primary': {
+                            DEFAULT: '#E65100', // Terracotta Warm Orange-Red
+                            light: '#FF8A50',
+                            dark: '#B22A00'
+                        },
+                        'amber-secondary': {
+                            DEFAULT: '#FFB300', // Warm Amber
+                            light: '#FFE54C',
+                            dark: '#C68400'
+                        },
+                        'sand-bg': '#FCF9F2',
+                        'dark-text': '#2E241E',
+                        'card-bg': '#FFFFFF',
+                        'muted-slate': '#7D7068',
+                        'light-sage': '#E8F5E9',
+                        'success-green': '#2E7D32'
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        display: ['"Space Grotesk"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #FCF9F2;
+            color: #2E241E;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FCF9F2;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #E6510033;
+            border-radius: 999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #E6510066;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- Top Navigation Bar / Brand Header -->
+    <header class="bg-gradient-to-r from-gold-primary-dark via-gold-primary to-gold-primary-light text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/10 p-2 rounded-full cursor-pointer hover:bg-white/20 transition" onclick="switchTab(0)">
+                    <!-- Restaurant Main Bowl Icon -->
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83M12 8a4 4 0 110 8 4 4 0 010-8z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight flex items-center gap-2">
+                        ICHIRAKU RAMEN
+                        <span class="bg-amber-secondary text-dark-text text-[10px] uppercase font-bold px-1.5 py-0.5 rounded tracking-wide">Ninja Hub</span>
+                    </h1>
+                    <p class="text-[10px] md:text-xs text-orange-100 font-light tracking-wide">Authentic Ninja Ramen Hub & Broth</p>
+                </div>
+            </div>
+
+            <!-- Cart Trigger Button -->
+            <div class="relative flex items-center gap-2">
+                <!-- Direct Vercel Deployment Helper Chip -->
+                <button onclick="toggleDeployModal()" class="hidden md:flex items-center gap-1.5 bg-black/30 hover:bg-black/50 text-xs px-3 py-1.5 rounded-full font-medium transition text-amber-200">
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm1-5h-2v-2h2v2zm0-4h-2V8h2v5z"/></svg>
+                    How to Host on Vercel
+                </button>
+
+                <button id="cart-nav-btn" onclick="openCart()" class="relative bg-white/20 hover:bg-white/30 transition p-2.5 rounded-full flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                    <span id="cart-badge" class="absolute -top-1 -right-1 bg-amber-secondary text-dark-text text-[10px] font-extrabold w-5 h-5 flex items-center justify-center rounded-full border-2 border-orange-700 hidden">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Optional Quick notice bar for Vercel users -->
+    <div id="vercel-toast" class="bg-amber-50 border-b border-amber-200 px-4 py-2.5 text-center text-xs md:text-sm text-dark-text flex items-center justify-center gap-3">
+        <span class="flex items-center gap-1 text-gold-primary font-semibold">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2z"/></svg>
+            Vercel Ready!
+        </span>
+        <span>This project is configured correctly in the root folder. You're set for safe hosting.</span>
+        <button onclick="toggleDeployModal()" class="underline font-medium hover:text-gold-primary">Show Setup Guide</button>
+        <button onclick="document.getElementById('vercel-toast').style.display='none'" class="text-muted-slate hover:text-dark-text ml-2">✕</button>
+    </div>
+
+    <!-- Main Content Grid -->
+    <main class="flex-grow max-w-6xl w-full mx-auto p-4 pb-24 md:pb-8">
+        
+        <!-- Screen 0: BRANCHES SCREEN -->
+        <section id="screen-branches" class="tab-content">
+            <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight text-dark-text">Our Honorable Branches</h2>
+                    <p class="text-sm text-muted-slate">Visit us at any of our quiet waterfront, desert oasis or village centers.</p>
+                </div>
+                <div class="flex gap-2">
+                    <span id="all-branches-badge" class="bg-gold-primary/10 text-gold-primary text-xs font-semibold px-3 py-1 rounded-full">3 Active Havens</span>
+                </div>
+            </div>
+
+            <!-- Branch Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="branches-container">
+                <!-- Dynamically Rendered -->
+            </div>
+        </section>
+
+        <!-- Screen 1: ORDER FOOD / MENU SCREEN -->
+        <section id="screen-menu" class="tab-content hidden">
+            <!-- Active Ordering Location Heading -->
+            <div class="bg-orange-50 border border-orange-100 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-gold-primary/10 p-2.5 rounded-xl text-gold-primary">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <span class="text-xs uppercase tracking-wider font-semibold text-gold-primary-dark">Ordering From Branch</span>
+                        <h3 id="ordering-branch-name" class="text-lg font-bold text-dark-text">Leaf Village Branch</h3>
+                    </div>
+                </div>
+                <div>
+                    <label for="branch-selector" class="block text-[11px] font-semibold text-muted-slate mb-1">Switch Branch:</label>
+                    <select id="branch-selector" onchange="onMenuBranchChange(this.value)" class="bg-white border border-orange-200 text-sm rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-gold-primary font-medium">
+                        <!-- Dynamic Options -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- Filters Bar -->
+            <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <!-- Search -->
+                <div class="relative flex-grow max-w-md">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-slate">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </span>
+                    <input type="text" id="menu-search" oninput="filterMenuItems()" placeholder="Search signature bowls & sides..." class="bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 w-full text-sm font-medium focus:outline-none focus:ring-2 focus:ring-gold-primary transition" />
+                </div>
+
+                <!-- Vegetarian and Category Toggle -->
+                <div class="flex items-center gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <input type="checkbox" id="veg-toggle" onchange="filterMenuItems()" class="sr-only peer" />
+                        <div class="w-11 h-6 bg-slate-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-gold-primary peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-success-green relative"></div>
+                        <span class="text-xs font-bold text-success-green flex items-center gap-1">
+                            🟢 Shōjin / Vegetarian Only
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Categories Pill Nav -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-4 mb-6" id="categories-tabs">
+                <!-- Dynamic Pills -->
+            </div>
+
+            <!-- Menu Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="menu-container">
+                <!-- Dynamically Rendered -->
+            </div>
+
+            <!-- Alert Strip Sticky Footer for orders -->
+            <div id="cart-sticky-bar" class="fixed bottom-16 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:w-96 bg-gradient-to-r from-orange-950 to-gold-primary text-white py-3.5 px-5 rounded-2xl shadow-2xl flex items-center justify-between border border-amber-500/20 z-30 transition-transform duration-300 translate-y-24 hidden">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white/20 p-2 rounded-xl">
+                        <svg class="w-5 h-5 text-amber-300" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 100-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p id="sticky-cart-qty" class="text-xs text-orange-200 font-semibold">2 items added</p>
+                        <p id="sticky-cart-total" class="text-sm font-bold text-amber-200">Total: ₹760.00</p>
+                    </div>
+                </div>
+                <button onclick="openCart()" class="bg-amber-secondary hover:bg-amber-400 text-dark-text text-xs font-bold px-4 py-2 rounded-xl shadow transition">
+                    Checkout Now ➔
+                </button>
+            </div>
+        </section>
+
+        <!-- Screen 2: BOOKINGS, ORDERS & HISTORY SCREEN -->
+        <section id="screen-history" class="tab-content hidden">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold tracking-tight text-dark-text">Your Transaction History</h2>
+                <p class="text-sm text-muted-slate">Check details of past ramen bowls ordered or quiet custom table reservations.</p>
+            </div>
+
+            <!-- Secondary Tabs -->
+            <div class="flex border-b border-orange-100 mb-6 gap-6">
+                <button id="hist-tab-orders" onclick="switchHistorySubTab('orders')" class="pb-3 text-sm font-bold border-b-2 border-gold-primary text-gold-primary transition">
+                    📦 Orders Recieved
+                </button>
+                <button id="hist-tab-bookings" onclick="switchHistorySubTab('bookings')" class="pb-3 text-sm font-semibold border-b-2 border-transparent text-muted-slate hover:text-dark-text transition">
+                    📅 Table Reservations
+                </button>
+            </div>
+
+            <!-- Orders list -->
+            <div id="history-orders-panel" class="space-y-4">
+                <!-- Dynamically Rendered -->
+            </div>
+
+            <!-- Bookings list -->
+            <div id="history-bookings-panel" class="space-y-4 hidden">
+                <!-- Dynamically Rendered -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Navigation Bar (Mobile) & Desktop Sidebar -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-orange-100 shadow-xl py-2 px-6 flex justify-around md:justify-center md:gap-16 z-30">
+        <button id="nav-tab-0" onclick="switchTab(0)" class="flex flex-col items-center gap-1 text-gold-primary select-none w-16">
+            <svg class="w-5.5 h-5.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            <span class="text-[10px] font-bold">Harbors</span>
+        </button>
+        <button id="nav-tab-1" onclick="switchTab(1)" class="flex flex-col items-center gap-1 text-muted-slate hover:text-dark-text select-none w-16">
+            <svg class="w-5.5 h-5.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            <span class="text-[10px] font-medium">Order Food</span>
+        </button>
+        <button id="nav-tab-2" onclick="switchTab(2)" class="flex flex-col items-center gap-1 text-muted-slate hover:text-dark-text select-none w-16">
+            <svg class="w-5.5 h-5.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span class="text-[10px] font-medium">History</span>
+        </button>
+    </nav>
+
+
+    <!-- MODAL 1: BRANCH DETAIL DIALOG (WITH REVIEWS) -->
+    <div id="modal-branch-details" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full max-h-[85vh] overflow-y-auto shadow-2xl border border-orange-100 flex flex-col">
+            <!-- Header banner -->
+            <div id="branch-modal-header" class="relative py-8 px-6 text-white bg-gradient-to-b from-orange-900 to-gold-primary">
+                <button onclick="closeBranchDetailModal()" class="absolute top-4 right-4 bg-black/30 hover:bg-black/50 transition p-2 rounded-full text-white">✕</button>
+                <div class="flex items-center gap-2 mb-1.5">
+                    <span id="branch-modal-hours-pill" class="bg-amber-secondary text-dark-text text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-full">10:00 AM - 11:30 PM</span>
+                </div>
+                <h3 id="branch-modal-name" class="text-2xl font-bold">Leaf Village Branch</h3>
+                <p id="branch-modal-address" class="text-xs text-orange-100 font-light mt-1"></p>
+            </div>
+            
+            <div class="p-6 space-y-5 flex-grow">
+                <!-- Description -->
+                <div>
+                    <h4 class="text-xs uppercase tracking-wider font-bold text-gold-primary mb-1">Our Heritage & Lore</h4>
+                    <p id="branch-modal-desc" class="text-sm text-dark-text leading-relaxed font-light"></p>
+                </div>
+
+                <!-- Info Line -->
+                <div class="bg-sand-bg border border-orange-100 rounded-2xl p-4 grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                        <span class="text-muted-slate uppercase tracking-wider font-semibold text-[10px]">Contact Phone</span>
+                        <p id="branch-modal-phone" class="font-bold text-dark-text mt-0.5"></p>
+                    </div>
+                    <div>
+                        <span class="text-muted-slate uppercase tracking-wider font-semibold text-[10px]">Coordinates</span>
+                        <p id="branch-modal-coords" class="font-bold text-[11px] text-dark-text mt-0.5"></p>
+                    </div>
+                </div>
+
+                <!-- Reviews Feed -->
+                <div>
+                    <div class="flex items-center justify-between border-b border-orange-100 pb-2 mb-3">
+                        <h4 class="text-sm font-bold text-dark-text flex items-center gap-1.5">
+                            🍜 Ninja Reviews Feed
+                            <span id="branch-modal-review-count" class="bg-gold-primary/10 text-gold-primary text-[10px] px-2 py-0.5 font-bold rounded-lg">(2)</span>
+                        </h4>
+                        <button onclick="openReviewComposer()" class="text-xs font-bold text-gold-primary hover:underline">+ Share Review</button>
+                    </div>
+
+                    <!-- Add Review Form (In-line Toggle) -->
+                    <div id="add-review-section" class="bg-orange-50/50 border border-orange-200/50 rounded-2xl p-4 mb-4 hidden space-y-3">
+                        <h5 class="text-xs font-bold text-dark-text">Write an Honorable Review</h5>
+                        <div class="space-y-2">
+                            <input type="text" id="review-customer-name" placeholder="Your Ninja Name / Identity" class="w-full bg-white border border-orange-100 text-xs rounded-xl p-2 focus:outline-none focus:ring-1 focus:ring-gold-primary" />
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs text-muted-slate">Your Rating:</span>
+                                <div class="flex gap-1" id="star-selector">
+                                    <button onclick="setReviewRating(1)" type="button" class="star-btn text-amber-400 text-lg">★</button>
+                                    <button onclick="setReviewRating(2)" type="button" class="star-btn text-amber-400 text-lg">★</button>
+                                    <button onclick="setReviewRating(3)" type="button" class="star-btn text-amber-400 text-lg">★</button>
+                                    <button onclick="setReviewRating(4)" type="button" class="star-btn text-amber-300 text-lg">★</button>
+                                    <button onclick="setReviewRating(5)" type="button" class="star-btn text-amber-300 text-lg">★</button>
+                                </div>
+                            </div>
+                            <textarea id="review-comment" rows="2" placeholder="Tell us how the broth warmed your soul..." class="w-full bg-white border border-orange-100 text-xs rounded-xl p-2 focus:outline-none focus:ring-1 focus:ring-gold-primary"></textarea>
+                        </div>
+                        <div class="flex justify-end gap-2 text-xs">
+                            <button onclick="closeReviewComposer()" class="text-muted-slate px-3 py-1">Cancel</button>
+                            <button onclick="submitReview()" class="bg-gold-primary hover:bg-gold-primary-dark text-white font-bold px-4 py-1.5 rounded-xl">Post Feed</button>
+                        </div>
+                    </div>
+
+                    <!-- Review lists list -->
+                    <div id="branch-modal-reviews-list" class="space-y-3 overflow-y-auto max-h-[220px]">
+                        <!-- Dynamic items -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Action Bar -->
+            <div class="p-6 bg-sand-bg border-t border-orange-100 flex gap-3">
+                <button id="branch-modal-order-btn" class="flex-grow bg-gold-primary hover:bg-gold-primary-dark text-white rounded-2xl py-3 text-sm font-bold shadow-lg transition">
+                    Order Foods Online
+                </button>
+                <button id="branch-modal-book-btn" class="flex-grow bg-white border border-orange-200 text-gold-primary hover:bg-orange-50 rounded-2xl py-3 text-sm font-bold transition">
+                    Book Table
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODAL 2: TABLE RESERVATION BOOK DELEGATOR -->
+    <div id="modal-table-booking" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-orange-100 overflow-hidden">
+            <!-- Header layout -->
+            <div class="bg-gradient-to-r from-gold-primary-dark to-gold-primary text-white p-5 flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold">Reserve Fine-Dine Table</h3>
+                    <p id="booking-modal-subtitle" class="text-xs text-orange-100 font-light mt-0.5">At Leaf Village Branch</p>
+                </div>
+                <button onclick="closeBookingModal()" class="text-white hover:text-orange-200">✕</button>
+            </div>
+
+            <!-- Form -->
+            <form id="booking-form" onsubmit="handleBookingSubmit(event)" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-muted-slate mb-1">Your Full Name</label>
+                    <input type="text" id="booking-name" required placeholder="e.g. Naruto Uzumaki" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-primary" />
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-muted-slate mb-1">Contact Phone</label>
+                    <input type="tel" id="booking-phone" required placeholder="e.g. +91 98765 43210" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-primary" />
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-muted-slate mb-1">Guests Count</label>
+                        <select id="booking-guests" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-primary">
+                            <option value="1">1 Person</option>
+                            <option value="2" selected>2 Persons</option>
+                            <option value="4">4 Persons</option>
+                            <option value="6">6 Persons</option>
+                            <option value="8">8 Persons</option>
+                            <option value="12">Feast Table (10-12)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-muted-slate mb-1">Reservation Date</label>
+                        <input type="date" id="booking-date" required class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-primary" />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-muted-slate mb-1">Preferred Time Slot</label>
+                    <select id="booking-time" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-primary">
+                        <option value="11:30 AM">11:30 AM (Lunch)</option>
+                        <option value="01:00 PM">01:00 PM</option>
+                        <option value="02:30 PM">02:30 PM</option>
+                        <option value="06:30 PM" selected>06:30 PM (Dinner Hour)</option>
+                        <option value="08:00 PM">08:00 PM</option>
+                        <option value="09:30 PM">09:30 PM</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-muted-slate mb-1">Special Chef/Broth Request (Optional)</label>
+                    <textarea id="booking-requests" rows="2" placeholder="e.g. Extra narutomaki swirl, separate chili condiments, etc." class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-primary"></textarea>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-gold-primary hover:bg-gold-primary-dark text-white rounded-2xl py-3.5 text-sm font-bold shadow-lg transition">
+                        Confirm Table Reservation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- MODAL 3: BASKET / CART DISPLAY DIALOG -->
+    <div id="modal-cart" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-orange-100 overflow-hidden flex flex-col max-h-[90vh]">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-orange-950 to-gold-primary text-white p-5 flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold flex items-center gap-1.5">
+                        📦 Your Food Basket
+                        <span id="cart-modal-title-qty" class="bg-amber-secondary text-dark-text text-[10px] px-2 py-0.5 rounded-lg font-extrabold">2 Items</span>
+                    </h3>
+                    <p id="cart-modal-subtitle" class="text-xs text-orange-200 mt-0.5">Leaf Village Branch Outpost</p>
+                </div>
+                <button onclick="closeCart()" class="text-white hover:text-orange-200">✕</button>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div class="p-5 overflow-y-auto flex-grow space-y-4">
+                <!-- Basket Items -->
+                <div id="cart-items-list" class="space-y-3">
+                    <!-- Dynamic rendering -->
+                </div>
+
+                <!-- Receipt Pricing -->
+                <div class="border-t border-orange-100 pt-3 space-y-2 text-xs">
+                    <div class="flex justify-between text-muted-slate">
+                        <span>Items Subtotal</span>
+                        <span id="cart-summary-subtotal">₹700.00</span>
+                    </div>
+                    <div class="flex justify-between text-muted-slate">
+                        <span>Cooking Charge & Packaging</span>
+                        <span>₹30.00</span>
+                    </div>
+                    <div class="flex justify-between text-muted-slate">
+                        <span>Ninjutsu Delivery Fee</span>
+                        <span id="cart-summary-delivery-charge" class="text-success-green font-medium">FREE</span>
+                    </div>
+                    <div class="flex justify-between text-base font-bold text-dark-text border-t border-dashed border-orange-100 pt-2">
+                        <span>Grand Total</span>
+                        <span id="cart-summary-total" class="text-gold-primary">₹730.00</span>
+                    </div>
+                </div>
+
+                <!-- Checkout details -->
+                <div class="border-t border-orange-100 pt-4 space-y-3">
+                    <h4 class="text-xs uppercase tracking-wider font-bold text-gold-primary">Checkout Details</h4>
+                    <div class="grid grid-cols-3 gap-2" id="delivery-type-selector">
+                        <button onclick="setDeliveryType('Dine-In')" id="btn-dine-in" type="button" class="py-2 px-2 border-2 border-gold-primary bg-orange-50 text-gold-primary text-xs font-bold rounded-xl flex flex-col items-center gap-1">
+                            🍜 Dine-In
+                        </button>
+                        <button onclick="setDeliveryType('Takeaway')" id="btn-takeaway" type="button" class="py-2 px-2 border-2 border-transparent bg-sand-bg hover:bg-orange-50/50 text-muted-slate text-xs font-semibold rounded-xl flex flex-col items-center gap-1">
+                            🛍️ Takeaway
+                        </button>
+                        <button onclick="setDeliveryType('Delivery')" id="btn-delivery" type="button" class="py-2 px-2 border-2 border-transparent bg-sand-bg hover:bg-orange-50/50 text-muted-slate text-xs font-semibold rounded-xl flex flex-col items-center gap-1">
+                            🛵 Delivery
+                        </button>
+                    </div>
+
+                    <div class="space-y-2.5 text-xs">
+                        <div>
+                            <label class="block font-semibold text-muted-slate mb-1">Your Full Name</label>
+                            <input type="text" id="cart-customer-name" required placeholder="e.g. Naruto Uzumaki" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gold-primary" />
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-muted-slate mb-1">Contact Phone Number</label>
+                            <input type="tel" id="cart-customer-phone" required placeholder="e.g. +91 98765 43210" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gold-primary" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Checkout Button -->
+            <div class="p-5 bg-sand-bg border-t border-orange-100 flex gap-2">
+                <button onclick="clearFullCart()" class="text-xs hover:text-red-600 text-muted-slate font-medium px-2">Clear</button>
+                <button onclick="submitOrderCheckout()" class="flex-grow bg-gold-primary hover:bg-gold-primary-dark text-white rounded-2xl py-3.5 text-sm font-bold shadow-lg transition">
+                    Place Honor Order
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODAL 4: GORGEOUS SUCCESS RECEIPT VIEW -->
+    <div id="modal-receipt" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl border-2 border-dashed border-orange-200 overflow-hidden text-center relative p-6">
+            <!-- Success Spark -->
+            <div class="mx-auto w-14 h-14 bg-green-100 rounded-full flex items-center justify-center text-success-green text-3xl mb-4 animate-bounce">
+                ✓
+            </div>
+            <h3 id="receipt-title" class="text-xl font-bold text-dark-text">Booking confirmed!</h3>
+            <p id="receipt-subtitle" class="text-xs text-muted-slate mt-1">Thank you for eating at Ichiraku.</p>
+
+            <!-- Line breakdown -->
+            <div class="bg-sand-bg border border-dashed border-orange-100 rounded-2xl p-4 my-5 text-left text-xs space-y-3" id="receipt-details">
+                <!-- Dynamically populated -->
+            </div>
+
+            <!-- WhatsApp action buttons -->
+            <div class="space-y-2">
+                <button id="btn-whatsapp-action" onclick="triggerReceiptWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl py-3 text-sm font-bold flex items-center justify-center gap-2 shadow transition">
+                    <!-- WhatsApp SVG Icon -->
+                    <svg class="w-4 h-4 filled" fill="currentColor" viewBox="0 0 24 24"><path d="M12.012 2C6.5 2 2.012 6.5 2.012 12c0 1.912.537 3.712 1.488 5.25L2 22l4.912-1.3c1.475.813 3.175 1.3 4.975 1.3 5.512 0 10-4.5 10-10S17.525 2 12.012 2zm6.75 13.913c-.275.762-1.363 1.387-1.887 1.45-.475.05-1.087.087-1.75-.125-.412-.138-.95-.313-1.613-.6-2.65-1.125-4.387-3.83-4.525-4.013-.125-.175-.987-1.325-.987-2.525s.625-1.787.875-2.037c.213-.238.475-.363.638-.363.163 0 .325.012.463.025.138.013.338-.05.513.375.187.45.638 1.562.7 1.688.062.125.1.275.013.438-.075.163-.113.25-.238.4-.125.137-.263.312-.375.425-.125.125-.262.262-.113.512.15.25.663 1.088 1.425 1.763.975.875 1.8 1.138 2.063 1.275.25.125.4.1.55-.075.15-.175.638-.75.813-1 .175-.25.35-.213.587-.125.25.1.1.925 1.6 1.713.4132.225.688.338.788.513.1.175.1.987-.175 1.75z"/></svg>
+                    Send to WhatsApp
+                </button>
+                <button onclick="closeReceiptModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl py-2.5 text-xs font-semibold transition">
+                    Done & Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODAL 5: VERCEL DEPLOYMENT INSTRUCTIONAL DIALOG -->
+    <div id="modal-deploy" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-orange-100 overflow-hidden">
+            <div class="bg-gradient-to-r from-orange-950 to-gold-primary text-white p-5 flex items-center justify-between">
+                <div>
+                    <h3 class="font-bold flex items-center gap-1.5 p-1">
+                        🚀 Deploy Effortlessly to Vercel
+                    </h3>
+                </div>
+                <button onclick="toggleDeployModal()" class="text-white hover:text-orange-200">✕</button>
+            </div>
+
+            <div class="p-6 space-y-4 text-xs md:text-sm text-dark-text leading-relaxed">
+                <p>Since this project is hosted on GitHub, you can import it into Vercel within 1 minute with <strong>zero configuration changes</strong>.</p>
+                
+                <h4 class="font-bold text-gold-primary flex items-center gap-1">
+                    <span>1.</span> Push / Synchronize to GitHub
+                </h4>
+                <p class="text-muted-slate text-xs pl-4">Ensure your latest changes including this root <code>index.html</code> are pushed to your import repository.</p>
+
+                <h4 class="font-bold text-gold-primary flex items-center gap-1">
+                    <span>2.</span> Import in Vercel
+                </h4>
+                <p class="text-muted-slate text-xs pl-4">Log in to your <strong>Vercel Dashboard</strong>, click <strong>"Add New" ➔ "Project"</strong>, and import your GitHub repository.</p>
+
+                <h4 class="font-bold text-gold-primary flex items-center gap-1">
+                    <span>3.</span> Root Configuration (Solves 404 Error)
+                </h4>
+                <ul class="list-disc pl-8 space-y-1 text-xs text-muted-slate">
+                    <li>Vercel automatically detects the root <code>index.html</code>.</li>
+                    <li>Ensure <strong>"Framework Preset"</strong> is set to <strong>"Other"</strong> (default).</li>
+                    <li>Ensure <strong>Root Directory</strong> is set to <code>./</code> (which is default).</li>
+                    <li>Do <strong>not</strong> change build commands or output directories.</li>
+                </ul>
+
+                <div class="bg-orange-50 border border-orange-100 p-3 rounded-2xl text-[11px] text-orange-900 mt-2">
+                    💡 <strong>What caused the old 404 error?</strong> The repository was previously a pure Android project without any web page in the root. By deploying this new branch which contains <code>index.html</code> in the project root, Vercel will immediately deploy and render this gorgeous interactive website!
+                </div>
+            </div>
+
+            <div class="p-5 bg-sand-bg border-t border-orange-100 text-right">
+                <button onclick="toggleDeployModal()" class="bg-gold-primary hover:bg-gold-primary-dark text-white rounded-2xl py-2.5 px-6 text-xs font-bold transition">
+                    Understood, Safe Journey!
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ============================================== -->
+    <!-- JAVASCRIPT STATE ENGINE & CORE LOGIC          -->
+    <!-- ============================================== -->
+    <script>
+        // Default seeded branches matching the room database precisely
+        const SEEDED_BRANCHES = [
+            {
+                id: 1,
+                name: "Leaf Village Branch",
+                address: "Street 1, Near Hokage Monument, Hidden Leaf Village, 10001",
+                phone: "+91 98765 43210",
+                description: "The original Ichiraku Ramen branch. Sitting right at the heart of Konohagakure, where legendary ninjas like Naruto Uzumaki came to fuel their wills of fire over hot ramen.",
+                imageLabel: "heritage", // will use thematic gradient illustration
+                openingHours: "10:00 AM - 11:30 PM",
+                latitude: 35.0116,
+                longitude: 135.7681
+            },
+            {
+                id: 2,
+                name: "Sand Village Branch",
+                address: "Hidden Oasis Vista, Sandstorms Plaza, Sunagakure, 20002",
+                phone: "+91 98765 43211",
+                description: "Our desert outpost brings the rich warmth of specialized ramen broth to the sands. Featuring cool wind-sheltered seating, spicy dust-crafted ramen, and refreshing melon chillers.",
+                imageLabel: "bistro",
+                openingHours: "11:00 AM - 12:30 AM",
+                latitude: 34.6937,
+                longitude: 135.5023
+            },
+            {
+                id: 3,
+                name: "Mist Village Branch",
+                address: "Waterfront Harbor Line, Lake Kirigakure, Hidden Mist, 30003",
+                phone: "+91 98765 43212",
+                description: "A serene lakeside parlor shrouded in gentle steam. Best known for our seafood-infused miso varieties, local coastal premium sides, and tranquil candle-lit docks.",
+                imageLabel: "coastal",
+                openingHours: "11:30 AM - 11:00 PM",
+                latitude: 35.4437,
+                longitude: 139.6380
+            }
+        ];
+
+        // Seeded Menu items matching entities.kt precisely
+        const SEEDED_MENU_ITEMS = [
+            { id: 1, name: "Naruto Special Miso Ramen", category: "Mains", price: 350.0, description: "Our flagship miso ramen with soft noodles, rich soybean broth, generous narutomaki swirls, soft boiled egg, and nori.", isVegetarian: true, emoji: "🍜" },
+            { id: 2, name: "Hokage Shoyu Ramen", category: "Mains", price: 330.0, description: "Classic soy broth ramen cooked with organic bamboo shoots, toasted sesame oil, premium spring onions, and a perfectly-cured egg.", isVegetarian: true, emoji: "🍜" },
+            { id: 3, name: "Volcano Spicy Tonkotsu Ramen", category: "Mains", price: 380.0, description: "Spicy, rich, and creamy bone-style savory broth (pork-free / vegetarian option) with chili oil paste, dry seaweed, and wood ear mushrooms.", isVegetarian: true, emoji: "🌶️" },
+            { id: 4, name: "Mist Seafood Curry Ramen", category: "Mains", price: 410.0, description: "Rich curry-infused ramen broth loaded with plump fresh prawns, calamari rings, seaweed flakes, and soft noodles.", isVegetarian: true, emoji: "🍛" },
+            { id: 5, name: "Steamed Pork-free Gyoza", category: "Appetizers", price: 220.0, description: "Pan-seared Japanese dumplings with seasoned vegetable and tofu fillings, served with signature dipping vinegar.", isVegetarian: true, emoji: "🥟" },
+            { id: 6, name: "Classic Takoyaki Balls", category: "Appetizers", price: 240.0, description: "Crispy fried round batter pockets with savory fillings, drizzled with takoyaki sauce, spiced mayo, and seaweed bits.", isVegetarian: true, emoji: "🐙" },
+            { id: 7, name: "Garlic Salted Edamame", category: "Appetizers", price: 140.0, description: "Steamed vibrant soy bean pods tossed in coarse sea salt and charred garlic chili oil bits.", isVegetarian: true, emoji: "🫛" },
+            { id: 8, name: "Sweet Sakura Mochi", category: "Desserts", price: 180.0, description: "Sweet pink glutinous rice cake with a core of sweet red-bean paste, wrapped in a pickled cherry blossom leaf.", isVegetarian: true, emoji: "🍡" },
+            { id: 9, name: "Matcha Ice Cream Bowl", category: "Desserts", price: 190.0, description: "Rich, bitter-sweet premium stone-ground Uji matcha green tea ice cream topped with sweet red azuki beans.", isVegetarian: true, emoji: "🍵" },
+            { id: 10, name: "Bubbly Melon Soda", category: "Drinks", price: 150.0, description: "Iconic vibrant green melon-flavored Japanese carbonated soda, served ice-cold with a cherry garnish.", isVegetarian: true, emoji: "🥤" },
+            { id: 11, name: "Premium Hot Sencha", category: "Drinks", price: 110.0, description: "Freshly brewed high-quality Japanese loose-leaf green tea with sweet grassy notes, served in a traditional clay teapot.", isVegetarian: true, emoji: "🫖" }
+        ];
+
+        // Seeded reviews matching repository.kt precisely
+        const SEEDED_REVIEWS = [
+            { id: 1, branchId: 1, customerName: "Naruto Uzumaki", rating: 5, comment: "The Miso Chashu Ramen is the best food in the entire ninja world! Dattebayo! I eat here every single day!", timestamp: Date.now() - 86400000 },
+            { id: 2, branchId: 1, customerName: "Kakashi Hatake", rating: 5, comment: "A quiet, excellent spot to read my favorite novels while sipping rich, masterfully-brewed savory broth.", timestamp: Date.now() - 172800000 },
+            { id: 3, branchId: 2, customerName: "Gaara of the Sand", rating: 5, comment: "The spicy chili ramen warms the soul. Highly appreciate the quiet and peaceful atmosphere here.", timestamp: Date.now() - 50000000 },
+            { id: 4, branchId: 2, customerName: "Temari", rating: 4, comment: "Extremely flavorful. Perfect spicy kick to combat the cool desert nights.", timestamp: Date.now() - 120000000 },
+            { id: 5, branchId: 3, customerName: "Mei Terumi", rating: 5, comment: "Fabulous seafood broth, and the steaming environment feels just like home. Absolutely outstanding hospitality.", timestamp: Date.now() - 250000000 }
+        ];
+
+        // Core Application State
+        let state = {
+            currentTab: 0, // 0=Branches, 1=Menu, 2=History
+            selectedBranchId: 1, // Default Leaf Village
+            cart: {}, // MenuItem ID -> Quantity
+            bookings: [],
+            orders: [],
+            reviews: [],
+            activeHistorySubTab: 'orders', // 'orders' or 'bookings'
+            reviewComposerRating: 5,
+            checkoutDeliveryType: 'Dine-In'
+        };
+
+        // Initialize state on DOM load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFromLocalStorage();
+            initializeUI();
+            updateUI();
+        });
+
+        // Load persisted data
+        function loadFromLocalStorage() {
+            try {
+                state.bookings = JSON.parse(localStorage.getItem('ichiraku_bookings')) || [];
+                state.orders = JSON.parse(localStorage.getItem('ichiraku_orders')) || [];
+                state.reviews = JSON.parse(localStorage.getItem('ichiraku_reviews')) || [...SEEDED_REVIEWS];
+                
+                // Keep default reviews seeded if clear
+                if (state.reviews.length === 0) {
+                    state.reviews = [...SEEDED_REVIEWS];
+                }
+            } catch (e) {
+                console.error("Local storage seed error", e);
+                state.reviews = [...SEEDED_REVIEWS];
+            }
+        }
+
+        // Persist data
+        function saveToLocalStorage() {
+            localStorage.setItem('ichiraku_bookings', JSON.stringify(state.bookings));
+            localStorage.setItem('ichiraku_orders', JSON.stringify(state.orders));
+            localStorage.setItem('ichiraku_reviews', JSON.stringify(state.reviews));
+        }
+
+        function initializeUI() {
+            // Setup branch selectors and static content
+            const selector = document.getElementById('branch-selector');
+            selector.innerHTML = SEEDED_BRANCHES.map(b => 
+                `<option value="${b.id}" ${b.id === state.selectedBranchId ? 'selected' : ''}>${b.name}</option>`
+            ).join('');
+
+            // Categories Pills
+            const categories = ["All", "Mains", "Appetizers", "Desserts", "Drinks"];
+            const pDiv = document.getElementById('categories-tabs');
+            pDiv.innerHTML = categories.map((cat, i) => 
+                `<button id="cat-tab-${cat}" onclick="switchCategoryTab('${cat}')" class="px-4 py-2 text-xs font-bold rounded-full border border-orange-100 whitespace-nowrap transition cursor-pointer select-none ${i === 0 ? 'bg-gold-primary text-white border-transparent' : 'bg-white text-muted-slate hover:bg-orange-50/55'}">${cat === 'Drinks' ? 'Beverages / Drinks' : cat}</button>`
+            ).join('');
+
+            // Lock tomorrow date as default table booking date input
+            const dateInput = document.getElementById('booking-date');
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            dateInput.value = tomorrow.toISOString().split('T')[0];
+        }
+
+        // Main Tab Switcher
+        function switchTab(index) {
+            state.currentTab = index;
+            
+            // Hide all tab screens
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            
+            // Update nav bars highlight
+            for (let i = 0; i < 3; i++) {
+                const navBtn = document.getElementById(`nav-tab-${i}`);
+                if (i === index) {
+                    navBtn.className = "flex flex-col items-center gap-1 text-gold-primary select-none w-16";
+                } else {
+                    navBtn.className = "flex flex-col items-center gap-1 text-muted-slate hover:text-dark-text select-none w-16";
+                }
+            }
+
+            // Show current screen
+            if (index === 0) document.getElementById('screen-branches').classList.remove('hidden');
+            if (index === 1) document.getElementById('screen-menu').classList.remove('hidden');
+            if (index === 2) document.getElementById('screen-history').classList.remove('hidden');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            updateUI();
+        }
+
+        // Sub Tab selector in History screen
+        function switchHistorySubTab(sub) {
+            state.activeHistorySubTab = sub;
+            const ordersBtn = document.getElementById('hist-tab-orders');
+            const bookingsBtn = document.getElementById('hist-tab-bookings');
+            const ordersPanel = document.getElementById('history-orders-panel');
+            const bookingsPanel = document.getElementById('history-bookings-panel');
+
+            if (sub === 'orders') {
+                ordersBtn.className = "pb-3 text-sm font-bold border-b-2 border-gold-primary text-gold-primary transition";
+                bookingsBtn.className = "pb-3 text-sm font-semibold border-b-2 border-transparent text-muted-slate hover:text-dark-text transition";
+                ordersPanel.classList.remove('hidden');
+                bookingsPanel.classList.add('hidden');
+            } else {
+                ordersBtn.className = "pb-3 text-sm font-semibold border-b-2 border-transparent text-muted-slate hover:text-dark-text transition";
+                bookingsBtn.className = "pb-3 text-sm font-bold border-b-2 border-gold-primary text-gold-primary transition";
+                ordersPanel.classList.add('hidden');
+                bookingsPanel.classList.remove('hidden');
+            }
+            updateUI();
+        }
+
+        // Global Dynamic UI Renderer
+        function updateUI() {
+            updateBranchesScreen();
+            updateMenuScreen();
+            updateCartSidebar();
+            updateHistoryScreen();
+        }
+
+        // --------------------------------------------------------------------
+        // BRANCHES SCENE RENDER & INTERACTIONS
+        // --------------------------------------------------------------------
+        function updateBranchesScreen() {
+            const container = document.getElementById('branches-container');
+            
+            container.innerHTML = SEEDED_BRANCHES.map(branch => {
+                // Get ratings for this branch
+                const branchReviews = state.reviews.filter(r => r.branchId === branch.id);
+                const avgRating = branchReviews.length > 0
+                    ? (branchReviews.reduce((acc, r) => acc + r.rating, 0) / branchReviews.length).toFixed(1)
+                    : "5.0";
+
+                // Background gradient style according to imageLabel
+                let gradient = 'from-orange-850 to-orange-700'; // fallback
+                if (branch.imageLabel === 'heritage') gradient = 'from-amber-700 via-orange-800 to-red-900';
+                if (branch.imageLabel === 'bistro') gradient = 'from-amber-600 via-orange-700 to-amber-800';
+                if (branch.imageLabel === 'coastal') gradient = 'from-cyan-800 via-sky-800 to-slate-900';
+
+                return `
+                <div class="bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-orange-100 flex flex-col group">
+                    <!-- Branch Visual Hood -->
+                    <div class="h-44 bg-gradient-to-tr ${gradient} p-5 flex flex-col justify-between text-white relative">
+                        <div class="flex items-center justify-between">
+                            <span class="bg-black/20 backdrop-blur-sm text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider text-amber-200">
+                                🕒 ${branch.openingHours}
+                            </span>
+                            <span class="bg-amber-secondary text-dark-text text-xs font-black px-2 py-0.5 rounded-lg flex items-center gap-0.5 shadow">
+                                ★ ${avgRating}
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold tracking-tight mb-0.5 group-hover:text-amber-100 transition">${branch.name}</h3>
+                            <p class="text-[11px] text-white/80 line-clamp-1 font-light"><span class="font-normal text-amber-300">📍</span> ${branch.address}</p>
+                        </div>
+                    </div>
+
+                    <!-- Inner Information Block -->
+                    <div class="p-5 flex-grow flex flex-col justify-between space-y-4">
+                        <p class="text-xs text-muted-slate leading-relaxed font-light line-clamp-3">
+                            ${branch.description}
+                        </p>
+
+                        <!-- Actions Grid -->
+                        <div class="grid grid-cols-2 gap-2 pt-2">
+                            <button onclick="openBranchDetailModal(${branch.id})" class="text-xs text-gold-primary border border-orange-100 hover:bg-orange-50 font-bold py-2.5 px-3 rounded-2xl transition flex items-center justify-center gap-1">
+                                Info & Reviews (${branchReviews.length})
+                            </button>
+                            <button onclick="routeBranchToOrder(${branch.id})" class="text-xs text-white bg-gold-primary hover:bg-gold-primary-dark font-bold py-2.5 px-3 rounded-2xl shadow transition flex items-center justify-center gap-1">
+                                Order Food Online
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        // Branch Detail Modal with Review feed and write review
+        let currentModalBranchId = null;
+
+        function openBranchDetailModal(branchId) {
+            currentModalBranchId = branchId;
+            const branch = SEEDED_BRANCHES.find(b => b.id === branchId);
+            if (!branch) return;
+
+            document.getElementById('branch-modal-name').textContent = branch.name;
+            document.getElementById('branch-modal-address').textContent = "📍 " + branch.address;
+            document.getElementById('branch-modal-desc').textContent = branch.description;
+            document.getElementById('branch-modal-phone').textContent = branch.phone;
+            document.getElementById('branch-modal-hours-pill').textContent = branch.openingHours;
+            document.getElementById('branch-modal-coords').textContent = `${branch.latitude}, ${branch.longitude}`;
+
+            // Image label banner gradients
+            const el = document.getElementById('branch-modal-header');
+            let gradient = 'bg-gradient-to-b from-orange-900 to-gold-primary';
+            if (branch.imageLabel === 'coastal') gradient = 'bg-gradient-to-b from-slate-900 via-sky-900 to-cyan-900';
+            if (branch.imageLabel === 'bistro') gradient = 'bg-gradient-to-b from-orange-950 via-amber-800 to-orange-800';
+            el.className = `relative py-8 px-6 text-white ${gradient}`;
+
+            // Buttons hookups
+            document.getElementById('branch-modal-order-btn').onclick = () => {
+                closeBranchDetailModal();
+                routeBranchToOrder(branchId);
+            };
+            document.getElementById('branch-modal-book-btn').onclick = () => {
+                closeBranchDetailModal();
+                openBookingModal(branchId);
+            };
+
+            renderModalReviews();
+            document.getElementById('modal-branch-details').classList.remove('hidden');
+        }
+
+        function closeBranchDetailModal() {
+            document.getElementById('modal-branch-details').classList.add('hidden');
+            closeReviewComposer();
+        }
+
+        function renderModalReviews() {
+            const reviewsList = document.getElementById('branch-modal-reviews-list');
+            const countBadge = document.getElementById('branch-modal-review-count');
+            const branchReviews = state.reviews.filter(r => r.branchId === currentModalBranchId);
+
+            countBadge.textContent = `(${branchReviews.length})`;
+
+            if (branchReviews.length === 0) {
+                reviewsList.innerHTML = `<div class="text-center py-6 text-xs text-muted-slate italic">Be the first Ninja to review this haven!</div>`;
+                return;
+            }
+
+            reviewsList.innerHTML = branchReviews.map(r => {
+                const stars = "★".repeat(r.rating) + "☆".repeat(5 - r.rating);
+                const dateLabel = new Date(r.timestamp).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+                return `
+                <div class="bg-sand-bg border border-orange-100/50 p-3 rounded-2xl space-y-1">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-xs text-dark-text">${r.customerName}</span>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-amber-500 font-extrabold text-[10px] tracking-tight">${stars}</span>
+                            <span class="text-[9px] text-muted-slate">${dateLabel}</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-muted-slate italic leading-normal font-light">"${r.comment}"</p>
+                </div>
+                `;
+            }).join('');
+        }
+
+        // Add Review Form control inside Branch Detail modal
+        function openReviewComposer() {
+            document.getElementById('add-review-section').classList.remove('hidden');
+            setReviewRating(5);
+            document.getElementById('review-customer-name').value = '';
+            document.getElementById('review-comment').value = '';
+        }
+
+        function closeReviewComposer() {
+            document.getElementById('add-review-section').classList.add('hidden');
+        }
+
+        function setReviewRating(rating) {
+            state.reviewComposerRating = rating;
+            const starsBtns = document.querySelectorAll('.star-btn');
+            starsBtns.forEach((btn, index) => {
+                if (index < rating) {
+                    btn.classList.add('text-amber-500');
+                    btn.classList.remove('text-slate-300');
+                } else {
+                    btn.classList.add('text-slate-300');
+                    btn.classList.remove('text-amber-500');
+                }
+            });
+        }
+
+        function submitReview() {
+            const name = document.getElementById('review-customer-name').value.trim();
+            const comment = document.getElementById('review-comment').value.trim();
+
+            if (!name || !comment) {
+                alert("Please write your name and an honorable feedback comment.");
+                return;
+            }
+
+            const newReview = {
+                id: Date.now(),
+                branchId: currentModalBranchId,
+                customerName: name,
+                rating: state.reviewComposerRating,
+                comment: comment,
+                timestamp: Date.now()
+            };
+
+            state.reviews.unshift(newReview);
+            saveToLocalStorage();
+            renderModalReviews();
+            closeReviewComposer();
+            updateBranchesScreen();
+        }
+
+        function routeBranchToOrder(branchId) {
+            state.selectedBranchId = branchId;
+            document.getElementById('ordering-branch-name').textContent = SEEDED_BRANCHES.find(b => b.id === branchId).name;
+            document.getElementById('branch-selector').value = branchId;
+            switchTab(1);
+        }
+
+
+        // --------------------------------------------------------------------
+        // TABLE RESERVATION FORM
+        // --------------------------------------------------------------------
+        let bookingBranchId = null;
+
+        function openBookingModal(branchId = state.selectedBranchId) {
+            bookingBranchId = branchId;
+            const branch = SEEDED_BRANCHES.find(b => b.id === branchId);
+            document.getElementById('booking-modal-subtitle').textContent = `At ${branch.name} sanctuary`;
+            document.getElementById('modal-table-booking').classList.remove('hidden');
+        }
+
+        function closeBookingModal() {
+            document.getElementById('modal-table-booking').classList.add('hidden');
+        }
+
+        function handleBookingSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('booking-name').value.trim();
+            const phone = document.getElementById('booking-phone').value.trim();
+            const guests = parseInt(document.getElementById('booking-guests').value);
+            const date = document.getElementById('booking-date').value;
+            const time = document.getElementById('booking-time').value;
+            const requests = document.getElementById('booking-requests').value.trim();
+            const branch = SEEDED_BRANCHES.find(b => b.id === bookingBranchId);
+
+            const newBooking = {
+                id: Date.now(),
+                branchId: bookingBranchId,
+                branchName: branch.name,
+                customerName: name,
+                customerPhone: phone,
+                date: date,
+                time: time,
+                guestsCount: guests,
+                specialRequests: requests,
+                timestamp: Date.now(),
+                isConfirmed: false
+            };
+
+            state.bookings.unshift(newBooking);
+            saveToLocalStorage();
+            document.getElementById('booking-form').reset();
+            closeBookingModal();
+
+            // Open Receipt Dialog
+            showReceipt(newBooking, 'booking');
+            updateUI();
+        }
+
+
+        // --------------------------------------------------------------------
+        // MENU SCREEN / FOOD ORDERING
+        // --------------------------------------------------------------------
+        let activeCategoryFilter = "All";
+
+        function onMenuBranchChange(id) {
+            state.selectedBranchId = parseInt(id);
+            const branchName = SEEDED_BRANCHES.find(b => b.id === state.selectedBranchId).name;
+            document.getElementById('ordering-branch-name').textContent = branchName;
+            updateUI();
+        }
+
+        function switchCategoryTab(cat) {
+            activeCategoryFilter = cat;
+            
+            // Highlight current clicked pill
+            const categories = ["All", "Mains", "Appetizers", "Desserts", "Drinks"];
+            categories.forEach(c => {
+                const pill = document.getElementById(`cat-tab-${c}`);
+                if (c === cat) {
+                    pill.className = "px-4 py-2 text-xs font-bold rounded-full bg-gold-primary text-white border border-transparent whitespace-nowrap transition cursor-pointer select-none";
+                } else {
+                    pill.className = "px-4 py-2 text-xs font-bold rounded-full bg-white text-muted-slate border border-orange-100 whitespace-nowrap transition cursor-pointer select-none hover:bg-orange-50/55";
+                }
+            });
+
+            updateMenuScreen();
+        }
+
+        function filterMenuItems() {
+            updateMenuScreen();
+        }
+
+        function updateMenuScreen() {
+            const container = document.getElementById('menu-container');
+            const searchVal = document.getElementById('menu-search').value.toLowerCase().trim();
+            const isVegOnly = document.getElementById('veg-toggle').checked;
+
+            // Filter
+            const filtered = SEEDED_MENU_ITEMS.filter(item => {
+                if (activeCategoryFilter !== "All" && item.category !== activeCategoryFilter) return false;
+                if (isVegOnly && !item.isVegetarian) return false;
+                if (searchVal && !item.name.toLowerCase().includes(searchVal) && !item.description.toLowerCase().includes(searchVal)) return false;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                <div class="col-span-full text-center py-12">
+                    <p class="text-3xl">🏜️</p>
+                    <p class="text-sm font-bold text-dark-text mt-2">Broth Empty</p>
+                    <p class="text-slate-400 text-xs mt-1">No delicacies matched your exact filters.</p>
+                </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(item => {
+                const cartQty = state.cart[item.id] || 0;
+                
+                // Customize Counter HTML depending on whether item is already inside cart
+                let actionBtnHtml = `
+                    <button onclick="addToCart(${item.id})" class="bg-gold-primary hover:bg-gold-primary-dark text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow flex items-center justify-center gap-1 select-none">
+                        + Add Bowl
+                    </button>
+                `;
+                if (cartQty > 0) {
+                    actionBtnHtml = `
+                        <div class="flex items-center border border-gold-primary rounded-xl overflow-hidden shadow">
+                            <button onclick="removeFromCart(${item.id})" class="bg-orange-50 hover:bg-orange-100 text-gold-primary font-bold px-3 py-1.5 text-xs transition select-none">－</button>
+                            <span class="bg-white text-dark-text text-sm font-bold px-3 py-1 text-center select-none min-w-[28px]">${cartQty}</span>
+                            <button onclick="addToCart(${item.id})" class="bg-gold-primary hover:bg-gold-primary-dark text-white font-bold px-3 py-1.5 text-xs transition select-none">＋</button>
+                        </div>
+                    `;
+                }
+
+                return `
+                <div class="bg-white rounded-3xl p-5 shadow-sm hover:shadow-md border border-orange-100 flex flex-col justify-between space-y-4">
+                    <div class="space-y-3.5">
+                        <div class="flex items-start justify-between">
+                            <!-- Category Badge & Emblem -->
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-2xl">${item.emoji}</span>
+                                <span class="bg-sand-bg border border-orange-100 text-muted-slate text-[9px] uppercase font-bold px-2 py-0.5 rounded-full">
+                                    ${item.category === 'Drinks' ? 'Drink' : item.category}
+                                </span>
+                            </div>
+                            
+                            <!-- Vegetarian indicator -->
+                            <span class="border border-success-green/30 text-success-green bg-success-green/10 rounded px-1.5 py-0.5 text-[9px] font-bold flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 bg-success-green rounded-full"></span> Veg
+                            </span>
+                        </div>
+
+                        <div>
+                            <h4 class="text-sm font-bold text-dark-text tracking-tight uppercase">${item.name}</h4>
+                            <p class="text-[11px] text-muted-slate font-light leading-relaxed mt-1 line-clamp-2">${item.description}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-orange-50/50">
+                        <span class="text-base font-extrabold text-gold-primary-dark">₹${item.price.toFixed(2)}</span>
+                        ${actionBtnHtml}
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        // Cart Actions
+        function addToCart(itemId) {
+            state.cart[itemId] = (state.cart[itemId] || 0) + 1;
+            updateUI();
+        }
+
+        function removeFromCart(itemId) {
+            if (state.cart[itemId] > 1) {
+                state.cart[itemId]--;
+            } else {
+                delete state.cart[itemId];
+            }
+            updateUI();
+        }
+
+        function clearFullCart() {
+            state.cart = {};
+            closeCart();
+            updateUI();
+        }
+
+
+        // --------------------------------------------------------------------
+        // STICKY BOTTOM STRIP & BASKET MODAL
+        // --------------------------------------------------------------------
+        function updateCartSidebar() {
+            // Count total items
+            const totalQty = Object.values(state.cart).reduce((sum, q) => sum + q, 0);
+            
+            // Calculate total price
+            let subtotal = 0;
+            for (let id in state.cart) {
+                const item = SEEDED_MENU_ITEMS.find(i => i.id === parseInt(id));
+                subtotal += item.price * state.cart[id];
+            }
+
+            // Update badge on header
+            const badge = document.getElementById('cart-badge');
+            if (totalQty > 0) {
+                badge.textContent = totalQty;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            // Update sticky bottom strip on order screen
+            const stickyBar = document.getElementById('cart-sticky-bar');
+            if (state.currentTab === 1 && totalQty > 0) {
+                document.getElementById('sticky-cart-qty').textContent = `${totalQty} standard item${totalQty > 1 ? 's' : ''} added`;
+                document.getElementById('sticky-cart-total').textContent = `Total Draft: ₹${(subtotal + 30).toFixed(2)}`;
+                stickyBar.classList.remove('translate-y-24');
+                stickyBar.classList.remove('hidden');
+            } else {
+                stickyBar.classList.add('translate-y-24');
+                stickyBar.classList.add('hidden');
+            }
+
+            // Render items in cart Dialog
+            const listContainer = document.getElementById('cart-items-list');
+            document.getElementById('cart-modal-title-qty').textContent = `${totalQty} Dishes`;
+            
+            const currentBranch = SEEDED_BRANCHES.find(b => b.id === state.selectedBranchId);
+            document.getElementById('cart-modal-subtitle').textContent = `Outpost: ${currentBranch.name}`;
+
+            if (totalQty === 0) {
+                listContainer.innerHTML = `
+                <div class="text-center py-10">
+                    <p class="text-3xl">empty</p>
+                    <p class="text-xs font-semibold text-muted-slate mt-1.5">No items in ninja basket.</p>
+                </div>
+                `;
+                document.getElementById('cart-summary-subtotal').textContent = "₹0.00";
+                document.getElementById('cart-summary-total').textContent = "₹0.00";
+                return;
+            }
+
+            listContainer.innerHTML = Object.entries(state.cart).map(([id, qty]) => {
+                const item = SEEDED_MENU_ITEMS.find(m => m.id === parseInt(id));
+                return `
+                <div class="bg-sand-bg border border-orange-100/50 p-3 rounded-2xl flex items-center justify-between gap-2.5">
+                    <div class="flex-grow">
+                        <h4 class="text-xs font-bold text-dark-text tracking-wide">${item.name}</h4>
+                        <p class="text-[10px] text-muted-slate mt-0.5">₹${item.price.toFixed(2)} x ${qty}</p>
+                    </div>
+                    <div class="flex items-center bg-white border border-orange-100 rounded-lg overflow-hidden shrink-0">
+                        <button onclick="removeFromCart(${item.id})" class="px-2 py-0.5 text-xs text-gold-primary hover:bg-orange-50 font-bold">－</button>
+                        <span class="px-2 text-xs font-extrabold text-dark-text">${qty}</span>
+                        <button onclick="addToCart(${item.id})" class="px-2 py-0.5 text-xs text-gold-primary hover:bg-orange-50 font-bold">＋</button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            // Totals
+            document.getElementById('cart-summary-subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+            const packaging = 30;
+            const grandTotal = subtotal + packaging;
+            document.getElementById('cart-summary-total').textContent = `₹${grandTotal.toFixed(2)}`;
+        }
+
+        function openCart() {
+            updateCartSidebar();
+            document.getElementById('modal-cart').classList.remove('hidden');
+        }
+
+        function closeCart() {
+            document.getElementById('modal-cart').classList.add('hidden');
+        }
+
+        function setDeliveryType(type) {
+            state.checkoutDeliveryType = type;
+            const btnDineIn = document.getElementById('btn-dine-in');
+            const btnTakeaway = document.getElementById('btn-takeaway');
+            const btnDelivery = document.getElementById('btn-delivery');
+
+            const activeClass = "py-2 px-2 border-2 border-gold-primary bg-orange-50 text-gold-primary text-xs font-bold rounded-xl flex flex-col items-center gap-1";
+            const inactiveClass = "py-2 px-2 border-2 border-transparent bg-sand-bg hover:bg-orange-50/50 text-muted-slate text-xs font-semibold rounded-xl flex flex-col items-center gap-1";
+
+            btnDineIn.className = type === 'Dine-In' ? activeClass : inactiveClass;
+            btnTakeaway.className = type === 'Takeaway' ? activeClass : inactiveClass;
+            btnDelivery.className = type === 'Delivery' ? activeClass : inactiveClass;
+        }
+
+        function submitOrderCheckout() {
+            const name = document.getElementById('cart-customer-name').value.trim();
+            const phone = document.getElementById('cart-customer-phone').value.trim();
+            const totalQty = Object.values(state.cart).reduce((sum, q) => sum + q, 0);
+
+            if (totalQty === 0) {
+                alert("Please add at least one steaming ramen bowl to checkout!");
+                return;
+            }
+            if (!name || !phone) {
+                alert("Please declare your name and contact phone number to place the order.");
+                return;
+            }
+
+            const currentBranch = SEEDED_BRANCHES.find(b => b.id === state.selectedBranchId);
+            
+            // Format orderItemsText
+            const itemsText = Object.entries(state.cart).map(([id, qty]) => {
+                const item = SEEDED_MENU_ITEMS.find(m => m.id === parseInt(id));
+                return `${item.name} x${qty}`;
+            }).join(", ");
+
+            // Grand Total (including simple cook prep of ₹30)
+            let subtotal = 0;
+            for (let id in state.cart) {
+                const item = SEEDED_MENU_ITEMS.find(i => i.id === parseInt(id));
+                subtotal += item.price * state.cart[id];
+            }
+            const grandTotal = subtotal + 30;
+
+            const newOrder = {
+                id: Date.now(),
+                branchId: state.selectedBranchId,
+                branchName: currentBranch.name,
+                customerName: name,
+                customerPhone: phone,
+                orderItemsText: itemsText,
+                totalAmount: grandTotal,
+                deliveryType: state.checkoutDeliveryType,
+                timestamp: Date.now(),
+                status: "Placed"
+            };
+
+            state.orders.unshift(newOrder);
+            state.cart = {}; // Empty cart
+            saveToLocalStorage();
+            
+            // Reset checkout text
+            document.getElementById('cart-customer-name').value = '';
+            document.getElementById('cart-customer-phone').value = '';
+            
+            closeCart();
+            showReceipt(newOrder, 'order');
+            updateUI();
+        }
+
+        // --------------------------------------------------------------------
+        // ORDERS & RESERVATION RECEIPT + WHATSAPP FORMATTERS
+        // --------------------------------------------------------------------
+        let activeReceiptData = null;
+        let activeReceiptType = null; // 'booking' or 'order'
+
+        function showReceipt(data, type) {
+            activeReceiptData = data;
+            activeReceiptType = type;
+
+            const title = document.getElementById('receipt-title');
+            const details = document.getElementById('receipt-details');
+
+            if (type === 'booking') {
+                title.textContent = "Reservation Confirmed! 📅";
+                const requests = data.specialRequests ? data.specialRequests : 'None';
+                details.innerHTML = `
+                    <div class="text-center font-bold tracking-tight text-sm border-b border-orange-100 pb-2 mb-2 text-gold-primary">
+                        TABLE TICKET
+                    </div>
+                    <div><strong>Haven / Branch:</strong> ${data.branchName}</div>
+                    <div><strong>Customer Name:</strong> ${data.customerName}</div>
+                    <div><strong>Contact Info:</strong> ${data.customerPhone}</div>
+                    <div><strong>Date Proposed:</strong> ${data.date}</div>
+                    <div><strong>Prefer Time:</strong> ${data.time}</div>
+                    <div><strong>Gather Size:</strong> ${data.guestsCount} Ninja Guests</div>
+                    <div class="border-t border-orange-100/50 pt-2 text-[10px] text-muted-slate">
+                        <strong>Special Request:</strong> ${requests}
+                    </div>
+                `;
+            } else {
+                title.textContent = "Order Placed Successfully! 🍜";
+                details.innerHTML = `
+                    <div class="text-center font-bold tracking-tight text-sm border-b border-orange-100 pb-2 mb-2 text-gold-primary">
+                        BILL RECEIPT
+                    </div>
+                    <div><strong>Branch Outpost:</strong> ${data.branchName}</div>
+                    <div><strong>Customer Owner:</strong> ${data.customerName}</div>
+                    <div><strong>Contact Info:</strong> ${data.customerPhone}</div>
+                    <div><strong>Delivery Route:</strong> ${data.deliveryType}</div>
+                    <div class="border-t border-dashed border-orange-100 py-1.5">
+                        <strong>Items Prepared:</strong>
+                        <div class="pl-2 italic text-[11px] text-muted-slate mt-0.5">
+                            ${data.orderItemsText.split(", ").map(it => `• ${it}`).join("<br/>")}
+                        </div>
+                    </div>
+                    <div class="flex justify-between border-t border-orange-100 pt-2 font-bold text-gold-primary-dark">
+                        <span>Paid Total:</span>
+                        <span>₹${data.totalAmount.toFixed(2)}</span>
+                    </div>
+                `;
+            }
+
+            document.getElementById('modal-receipt').classList.remove('hidden');
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('modal-receipt').classList.add('hidden');
+        }
+
+        // WhatsApp trigger math
+        function triggerReceiptWhatsApp() {
+            if (!activeReceiptData) return;
+            
+            const currentBranch = SEEDED_BRANCHES.find(b => b.id === activeReceiptData.branchId) || SEEDED_BRANCHES[0];
+            const phone = currentBranch.phone;
+
+            let text = "";
+            if (activeReceiptType === 'booking') {
+                const reqText = activeReceiptData.specialRequests.trim() === "" ? "None" : activeReceiptData.specialRequests;
+                text = "Konnichiwa Ichiraku Ramen! 📅\n" +
+                       `I would like to reserve a table at *${activeReceiptData.branchName}*:\n` +
+                       "--------------------------------------\n" +
+                       `👤 *Name*: ${activeReceiptData.customerName}\n` +
+                       `📞 *Contact*: ${activeReceiptData.customerPhone}\n` +
+                       `👥 *Guests Count*: ${activeReceiptData.guestsCount} Persons\n` +
+                       `📅 *Reservation Date*: ${activeReceiptData.date}\n` +
+                       `🕒 *Time Slot*: ${activeReceiptData.time}\n` +
+                       `💬 *Special Request*: ${reqText}\n` +
+                       "--------------------------------------\n\n" +
+                       "Please confirm this table booking at your earliest. Thank you!";
+            } else {
+                text = "Konnichiwa Ichiraku Ramen! 🍜\n" +
+                       `I would like to place an order at *${activeReceiptData.branchName}*:\n` +
+                       "--------------------------------------\n" +
+                       `👤 *Name*: ${activeReceiptData.customerName}\n` +
+                       `📞 *Contact*: ${activeReceiptData.customerPhone}\n` +
+                       `🚚 *Service Type*: ${activeReceiptData.deliveryType}\n` +
+                       "--------------------------------------\n" +
+                       "📝 *Items Ordered*:\n" +
+                       activeReceiptData.orderItemsText.split(", ").map(it => `• ${it}`).join("\n") + "\n" +
+                       "--------------------------------------\n" +
+                       `💰 *Grand Total*: ₹${activeReceiptData.totalAmount.toFixed(2)}\n\n` +
+                       "Please verify my order details. Thank you!";
+            }
+
+            const cleanPhone = phone.replace("+", "").replace(/\s+/g, "").trim();
+            const wUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(text)}`;
+            window.open(wUrl, '_blank');
+        }
+
+        // Generic re-send trigger from historical lists
+        function reSendWhatsAppFromHistory(id, type) {
+            let data = null;
+            if (type === 'booking') {
+                data = state.bookings.find(b => b.id === id);
+            } else {
+                data = state.orders.find(o => o.id === id);
+            }
+            if (data) {
+                showReceipt(data, type);
+            }
+        }
+
+
+        // --------------------------------------------------------------------
+        // HISTORICAL SCREEN RENDERING
+        // --------------------------------------------------------------------
+        function advanceOrderStatus(orderId) {
+            const index = state.orders.findIndex(o => o.id === orderId);
+            if (index !== -1) {
+                const currentStatus = state.orders[index].status || 'Placed';
+                let nextStatus = currentStatus;
+                if (currentStatus === 'Placed') nextStatus = 'Preparing';
+                else if (currentStatus === 'Preparing') nextStatus = 'Ready';
+                else if (currentStatus === 'Ready') nextStatus = 'Served';
+                
+                state.orders[index].status = nextStatus;
+                saveToLocalStorage();
+                updateHistoryScreen();
+            }
+        }
+
+        function updateHistoryScreen() {
+            const ordersPanel = document.getElementById('history-orders-panel');
+            const bookingsPanel = document.getElementById('history-bookings-panel');
+
+            // Render Orders
+            if (state.orders.length === 0) {
+                ordersPanel.innerHTML = `
+                <div class="text-center py-12 bg-white rounded-3xl border border-orange-100">
+                    <p class="text-3xl">📦</p>
+                    <p class="text-sm font-bold text-dark-text mt-2">Zero Orders Placed</p>
+                    <p class="text-xs text-slate-400 mt-1">Bowls of ramen ordered will register here.</p>
+                </div>
+                `;
+            } else {
+                ordersPanel.innerHTML = state.orders.map(o => {
+                    const status = o.status || 'Placed';
+                    const dateStr = new Date(o.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    
+                    let badgeClass = '';
+                    let badgeLabel = status;
+                    if (status === 'Placed') {
+                        badgeClass = 'bg-orange-50 text-orange-700 border-orange-100/50';
+                        badgeLabel = 'Placed 📦';
+                    } else if (status === 'Preparing') {
+                        badgeClass = 'bg-blue-50 text-blue-700 border-blue-100/50';
+                        badgeLabel = 'Preparing 🍳';
+                    } else if (status === 'Ready') {
+                        badgeClass = 'bg-amber-50 text-amber-700 border-amber-200/50';
+                        badgeLabel = 'Ready 🍜';
+                    } else if (status === 'Served') {
+                        badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200/50';
+                        badgeLabel = 'Served ✅';
+                    }
+
+                    const step1Class = (status === 'Placed') ? 'text-orange-600 font-bold' : 'text-slate-400';
+                    const step2Class = (status === 'Preparing') ? 'text-blue-600 font-bold' : 'text-slate-400';
+                    const step3Class = (status === 'Ready') ? 'text-amber-600 font-bold' : 'text-slate-400';
+                    const step4Class = (status === 'Served') ? 'text-emerald-600 font-bold' : 'text-slate-400';
+
+                    const dot1Class = (status === 'Placed' || status === 'Preparing' || status === 'Ready' || status === 'Served') ? 'bg-orange-500' : 'bg-slate-200';
+                    const dot2Class = (status === 'Preparing' || status === 'Ready' || status === 'Served') ? 'bg-blue-500' : 'bg-slate-200';
+                    const dot3Class = (status === 'Ready' || status === 'Served') ? 'bg-amber-500' : 'bg-slate-200';
+                    const dot4Class = (status === 'Served') ? 'bg-emerald-500' : 'bg-slate-200';
+
+                    const progressStepperHTML = `
+                    <div class="flex items-center justify-between text-[10px] sm:text-[11px] font-medium bg-orange-50/40 p-2.5 rounded-2xl border border-orange-100/30">
+                        <div class="flex items-center gap-1.5 ${step1Class}">
+                            <span class="w-2 h-2 rounded-full ${dot1Class}"></span> Placed
+                        </div>
+                        <div class="flex-grow mx-2 h-[1px] bg-orange-100/60"></div>
+                        <div class="flex items-center gap-1.5 ${step2Class}">
+                            <span class="w-2 h-2 rounded-full ${dot2Class}"></span> Preparing
+                        </div>
+                        <div class="flex-grow mx-2 h-[1px] bg-orange-100/60"></div>
+                        <div class="flex items-center gap-1.5 ${step3Class}">
+                            <span class="w-2 h-2 rounded-full ${dot3Class}"></span> Ready
+                        </div>
+                        <div class="flex-grow mx-2 h-[1px] bg-orange-100/60"></div>
+                        <div class="flex items-center gap-1.5 ${step4Class}">
+                            <span class="w-2 h-2 rounded-full ${dot4Class}"></span> Served
+                        </div>
+                    </div>
+                    `;
+
+                    let actionButtonHTML = '';
+                    if (status === 'Placed') {
+                        actionButtonHTML = `
+                            <button onclick="advanceOrderStatus(${o.id})" class="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-sm transition-all duration-200 hover:scale-[1.02]">
+                                🍳 Prep Bowl
+                            </button>
+                        `;
+                    } else if (status === 'Preparing') {
+                        actionButtonHTML = `
+                            <button onclick="advanceOrderStatus(${o.id})" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-sm transition-all duration-200 hover:scale-[1.02]">
+                                🍜 Mark Ready
+                            </button>
+                        `;
+                    } else if (status === 'Ready') {
+                        actionButtonHTML = `
+                            <button onclick="advanceOrderStatus(${o.id})" class="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-sm transition-all duration-200 hover:scale-[1.02]">
+                                ✅ Serve Order
+                            </button>
+                        `;
+                    } else {
+                        actionButtonHTML = `
+                            <span class="text-emerald-700 border border-emerald-200/50 bg-emerald-50/50 text-[11px] font-bold px-3 py-1.5 rounded-xl flex items-center gap-1">
+                                Served 🍜
+                            </span>
+                        `;
+                    }
+
+                    return `
+                    <div class="bg-white rounded-3xl p-5 shadow-sm hover:shadow-md border border-orange-100 space-y-3">
+                        <div class="flex items-center justify-between border-b border-orange-50 pb-2">
+                            <div>
+                                <span class="text-[10px] uppercase font-bold text-gold-primary tracking-wider">Order #${o.id.toString().slice(-4)}</span>
+                                <h4 class="text-sm font-bold text-dark-text mt-0.5">${o.branchName}</h4>
+                            </div>
+                            <div class="text-right">
+                                <span class="inline-block border rounded-full px-2.5 py-0.5 text-[9px] font-bold ${badgeClass}">
+                                    ${badgeLabel}
+                                </span>
+                                <p class="text-[9px] text-muted-slate mt-0.5">${dateStr}</p>
+                            </div>
+                        </div>
+
+                        ${progressStepperHTML}
+
+                        <div class="text-xs text-dark-text space-y-1 bg-sand-bg p-3 rounded-2xl">
+                            <div><strong>Service Route:</strong> ${o.deliveryType}</div>
+                            <div><strong>Customer Name:</strong> ${o.customerName} (${o.customerPhone})</div>
+                            <div class="border-t border-orange-100/50 pt-1.5 mt-1.5">
+                                <strong>Items:</strong>
+                                <span class="text-muted-slate italic">${o.orderItemsText}</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-2 border-t border-orange-50/50">
+                            <span class="text-sm font-extrabold text-gold-primary">Total Amount: ₹${o.totalAmount.toFixed(2)}</span>
+                            <div class="flex items-center gap-2">
+                                <button onclick="reSendWhatsAppFromHistory(${o.id}, 'order')" class="bg-white hover:bg-slate-50 text-emerald-600 border border-emerald-200 font-semibold text-[11px] px-3 py-1.5 rounded-xl flex items-center gap-1 transition" title="Reprint Ticket">
+                                    💬 Ticket
+                                </button>
+                                ${actionButtonHTML}
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+            }
+
+            // Render Bookings
+            if (state.bookings.length === 0) {
+                bookingsPanel.innerHTML = `
+                <div class="text-center py-12 bg-white rounded-3xl border border-orange-100">
+                    <p class="text-3xl">📅</p>
+                    <p class="text-sm font-bold text-dark-text mt-2">Zero Reservations</p>
+                    <p class="text-xs text-slate-400 mt-1">Booked tables for fine dining will register here.</p>
+                </div>
+                `;
+            } else {
+                bookingsPanel.innerHTML = state.bookings.map(b => {
+                    const dateStr = new Date(b.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    const reqStr = b.specialRequests.trim() === "" ? "None" : b.specialRequests;
+                    return `
+                    <div class="bg-white rounded-3xl p-5 shadow-sm hover:shadow-md border border-orange-100 space-y-3">
+                        <div class="flex items-center justify-between border-b border-orange-50 pb-2">
+                            <div>
+                                <span class="text-[10px] uppercase font-bold text-amber-600 tracking-wider">Reservation #${b.id.toString().slice(-4)}</span>
+                                <h4 class="text-sm font-bold text-dark-text mt-0.5">${b.branchName}</h4>
+                            </div>
+                            <div class="text-right">
+                                <span class="bg-amber-50 text-amber-700 border border-amber-100 rounded-full px-2.5 py-0.5 text-[9px] font-bold">
+                                    Awaiting Confirm
+                                </span>
+                                <p class="text-[9px] text-muted-slate mt-0.5">${dateStr}</p>
+                            </div>
+                        </div>
+
+                        <div class="text-xs text-dark-text space-y-1 bg-sand-bg p-3 rounded-2xl">
+                            <div><strong>Proposed Date:</strong> ${b.date} at ${b.time}</div>
+                            <div><strong>Gathering:</strong> ${b.guestsCount} Ninja Guests</div>
+                            <div><strong>Customer Name:</strong> ${b.customerName} (${b.customerPhone})</div>
+                            <div class="border-t border-orange-100/50 pt-1.5 mt-1.5">
+                                <strong>Requests:</strong>
+                                <span class="text-muted-slate italic">"${reqStr}"</span>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-1">
+                            <button onclick="reSendWhatsAppFromHistory(${b.id}, 'booking')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow transition">
+                                💬 WhatsApp Request
+                            </button>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Vercel popup guide helper
+        function toggleDeployModal() {
+            const modal = document.getElementById('modal-deploy');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>

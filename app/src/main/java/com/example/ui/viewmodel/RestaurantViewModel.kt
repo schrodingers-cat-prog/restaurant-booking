@@ -161,6 +161,19 @@ class RestaurantViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    // Update Order Status Transitions
+    fun advanceOrderStatus(order: Order) {
+        val nextStatus = when (order.status) {
+            "Placed" -> "Preparing"
+            "Preparing" -> "Ready"
+            "Ready" -> "Served"
+            else -> "Served"
+        }
+        viewModelScope.launch {
+            repository.updateOrder(order.copy(status = nextStatus))
+        }
+    }
+
     // Add Review
     fun addReview(
         branchId: Int,

@@ -52,6 +52,9 @@ interface RestaurantDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrder(order: Order): Long
 
+    @Update
+    suspend fun updateOrder(order: Order)
+
 
     // --- Review Queries ---
     @Query("SELECT * FROM reviews ORDER BY timestamp DESC")

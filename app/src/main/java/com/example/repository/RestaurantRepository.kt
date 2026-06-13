@@ -22,6 +22,7 @@ class RestaurantRepository(private val dao: RestaurantDao) {
     suspend fun deleteBooking(booking: Booking) = dao.deleteBooking(booking)
 
     suspend fun insertOrder(order: Order): Long = dao.insertOrder(order)
+    suspend fun updateOrder(order: Order) = dao.updateOrder(order)
     suspend fun insertReview(review: Review) = dao.insertReview(review)
 
     // Preseed static data if database is empty

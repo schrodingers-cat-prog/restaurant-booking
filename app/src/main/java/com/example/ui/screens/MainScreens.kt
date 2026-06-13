@@ -1153,7 +1153,11 @@ fun HistoryScreen(
                     contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
                     items(orders) { order ->
-                        OrderHistoryCard(order = order, onNotifyWhatsApp = { onResendOrderWhatsApp(order) })
+                        OrderHistoryCard(
+                            order = order,
+                            onNotifyWhatsApp = { onResendOrderWhatsApp(order) },
+                            onAdvanceStatus = { viewModel.advanceOrderStatus(order) }
+                        )
                     }
                 }
             }
@@ -1243,7 +1247,34 @@ fun BookingHistoryCard(booking: Booking, onNotifyWhatsApp: () -> Unit) {
 }
 
 @Composable
-fun OrderHistoryCard(order: Order, onNotifyWhatsApp: () -> Unit) {
+fun StatusDotLabel(label: String, isActiveOrDone: Boolean, isCurrent: Boolean) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .background(
+                    color = if (isCurrent) GoldPrimary else if (isActiveOrDone) SuccessGreen else MutedSlate.copy(alpha = 0.4f),
+                    shape = CircleShape
+                )
+        )
+        Text(
+            text = label,
+            fontSize = 9.sp,
+            fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+            color = if (isCurrent) GoldPrimary else if (isActiveOrDone) DarkText else MutedSlate
+        )
+    }
+}
+
+@Composable
+fun OrderHistoryCard(
+    order: Order,
+    onNotifyWhatsApp: () -> Unit,
+    onAdvanceStatus: () -> Unit
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = CardBackground),
         shape = RoundedCornerShape(16.dp),
@@ -1255,12 +1286,37 @@ fun OrderHistoryCard(order: Order, onNotifyWhatsApp: () -> Unit) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
                     Text(order.branchName, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = DarkText)
-                    Text("Receipt ID: #CO-${order.id + 2000}", color = MutedSlate, fontSize = 11.sp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text("ID: #CO-${order.id.toString().takeLast(4)}", color = MutedSlate, fontSize = 11.sp)
+                        
+                        // Status Badge
+                        val (statusText, statusBg, statusTextCol) = when (order.status) {
+                            "Preparing" -> Triple("Preparing 🍳", Color(0xFFE3F2FD), Color(0xFF1976D2))
+                            "Ready" -> Triple("Ready 🍜", Color(0xFFFFF8E1), Color(0xFFF57C00))
+                            "Served" -> Triple("Served ✅", Color(0xFFE8F5E9), Color(0xFF388E3C))
+                            else -> Triple("Placed 📦", Color(0xFFFFF3E0), Color(0xFFE65100))
+                        }
+                        Box(
+                            modifier = Modifier
+                                .background(statusBg, RoundedCornerShape(6.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = statusText,
+                                color = statusTextCol,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 9.sp
+                            )
+                        }
+                    }
                 }
 
                 Text(
@@ -1304,20 +1360,88 @@ fun OrderHistoryCard(order: Order, onNotifyWhatsApp: () -> Unit) {
                 lineHeight = 16.sp
             )
 
-            Divider(modifier = Modifier.padding(vertical = 12.dp), color = SandBackground, thickness = 1.dp)
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // Invoice actions
-            Button(
-                onClick = onNotifyWhatsApp,
-                colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
-                shape = RoundedCornerShape(12.dp),
+            // Mini visual progress track
+            val currentStatus = order.status
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(38.dp)
+                    .background(SandBackground.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Icon(Icons.Default.Receipt, "invoice", modifier = Modifier.size(14.dp), tint = Color.White)
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Open WhatsApp Invoice", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                StatusDotLabel("Placed", true, currentStatus == "Placed")
+                Box(modifier = Modifier.width(16.dp).height(1.dp).background(MutedSlate.copy(alpha = 0.3f)))
+                StatusDotLabel("Preparing", currentStatus == "Preparing" || currentStatus == "Ready" || currentStatus == "Served", currentStatus == "Preparing")
+                Box(modifier = Modifier.width(16.dp).height(1.dp).background(MutedSlate.copy(alpha = 0.3f)))
+                StatusDotLabel("Ready", currentStatus == "Ready" || currentStatus == "Served", currentStatus == "Ready")
+                Box(modifier = Modifier.width(16.dp).height(1.dp).background(MutedSlate.copy(alpha = 0.3f)))
+                StatusDotLabel("Served", currentStatus == "Served", currentStatus == "Served")
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Divider(color = SandBackground, thickness = 1.dp)
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Invoice & Transition actions
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // WhatsApp Invoice button
+                Button(
+                    onClick = onNotifyWhatsApp,
+                    colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(38.dp)
+                ) {
+                    Icon(Icons.Default.Receipt, "invoice", modifier = Modifier.size(14.dp), tint = Color.White)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Ticket", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+
+                // Advance status button
+                if (order.status != "Served") {
+                    val nextLabel = when (order.status) {
+                        "Placed" -> "Prep Bowl 🍳"
+                        "Preparing" -> "Mark Ready 🍜"
+                        "Ready" -> "Serve ✅"
+                        else -> "Serve ✅"
+                    }
+                    val btnBg = when (order.status) {
+                        "Placed" -> Color(0xFFE65100)
+                        "Preparing" -> Color(0xFF1976D2)
+                        "Ready" -> Color(0xFFFFB300)
+                        else -> GoldPrimary
+                    }
+                    Button(
+                        onClick = onAdvanceStatus,
+                        colors = ButtonDefaults.buttonColors(containerColor = btnBg),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .weight(1.3f)
+                            .height(38.dp)
+                    ) {
+                        Text(nextLabel, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .weight(1.3f)
+                            .height(38.dp)
+                            .border(BorderStroke(1.dp, Color(0xFF388E3C).copy(alpha = 0.3f)), RoundedCornerShape(12.dp))
+                            .background(Color(0xFFE8F5E9), RoundedCornerShape(12.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Served 🍜", color = Color(0xFF388E3C), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
             }
         }
     }
