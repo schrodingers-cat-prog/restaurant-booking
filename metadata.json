@@ -1,0 +1,6 @@
+{
+  "name": "Ichiraku Ramen",
+  "description": "Premium booking, ramen ordering, and branch reviews for Ichiraku Ramen Restaurant with automatic WhatsApp confirmation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
