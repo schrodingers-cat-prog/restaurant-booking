@@ -35,6 +35,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.font.FontStyle
+import java.util.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -2510,6 +2513,9 @@ fun SettingsDialog(
     val soundFXEnabled by viewModel.soundFXEnabled.collectAsState()
     val defaultPartySize by viewModel.defaultPartySize.collectAsState()
 
+    var showStaffAuthDialog by remember { mutableStateOf(false) }
+    var showStaffConsoleDialog by remember { mutableStateOf(false) }
+
     Dialog(onDismissRequest = onDismiss) {
         Card(
             shape = RoundedCornerShape(28.dp),
@@ -2741,6 +2747,32 @@ fun SettingsDialog(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(16.dp))
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFEEEEEE)))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFFFFF3E0))
+                        .border(1.dp, GoldPrimary.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                        .clickable {
+                            playAndroidChime(viewModel, false)
+                            showStaffAuthDialog = true
+                        }
+                        .testTag("staff_admin_console_button"),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "🔓 Access Staff Console",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = GoldPrimary
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Action confirmation save button
@@ -2764,6 +2796,24 @@ fun SettingsDialog(
             }
         }
     }
+
+    if (showStaffAuthDialog) {
+        StaffAuthDialog(
+            onDismissRequest = { showStaffAuthDialog = false },
+            onAuthSuccess = {
+                showStaffAuthDialog = false
+                showStaffConsoleDialog = true
+            },
+            viewModel = viewModel
+        )
+    }
+
+    if (showStaffConsoleDialog) {
+        StaffConsoleDialog(
+            viewModel = viewModel,
+            onDismissRequest = { showStaffConsoleDialog = false }
+        )
+    }
 }
 
 // Native audio synthesizer for client chimes
@@ -2778,6 +2828,355 @@ fun playAndroidChime(viewModel: RestaurantViewModel, isSuccess: Boolean) {
             }
         } catch (e: Exception) {
             // safe catch
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun StaffAuthDialog(
+    onDismissRequest: () -> Unit,
+    onAuthSuccess: () -> Unit,
+    viewModel: RestaurantViewModel
+) {
+    var passwordInput by remember { mutableStateOf("") }
+    var hasError by remember { mutableStateOf(false) }
+
+    Dialog(onDismissRequest = onDismissRequest) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .border(1.dp, GoldPrimary.copy(alpha = 0.2f), RoundedCornerShape(24.dp)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Staff Gateway 🔐",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 18.sp,
+                    color = DarkText
+                )
+                Text(
+                    text = "Enter Hokage authority password",
+                    fontSize = 11.sp,
+                    color = MutedSlate,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+                )
+
+                OutlinedTextField(
+                    value = passwordInput,
+                    onValueChange = {
+                        passwordInput = it
+                        hasError = false
+                    },
+                    modifier = Modifier.fillMaxWidth().testTag("staff_password_field"),
+                    label = { Text("Password", fontSize = 12.sp) },
+                    placeholder = { Text("Secret Key") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = GoldPrimary,
+                        unfocusedBorderColor = Color(0xFFE5E5E5),
+                        focusedLabelColor = GoldPrimary
+                    ),
+                    isError = hasError
+                )
+
+                if (hasError) {
+                    Text(
+                        text = "⚠️ Access Denied: Invalid Jutsu!",
+                        color = Color.Red,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismissRequest,
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MutedSlate),
+                        border = BorderStroke(1.dp, Color(0xFFE5E5E5)),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Cancel", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Button(
+                        onClick = {
+                            if (passwordInput == "NarutoHokage") {
+                                playAndroidChime(viewModel, true)
+                                onAuthSuccess()
+                            } else {
+                                hasError = true
+                                playAndroidChime(viewModel, false)
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = GoldPrimary),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1.5f).testTag("staff_password_submit_button")
+                    ) {
+                        Text("Unlock", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun StaffConsoleDialog(
+    viewModel: RestaurantViewModel,
+    onDismissRequest: () -> Unit
+) {
+    val liveOrders by viewModel.orders.collectAsState()
+    val liveBookings by viewModel.bookings.collectAsState()
+    var selectedSubTab by remember { mutableStateOf(0) } // 0 = Live Orders, 1 = Reservations
+
+    Dialog(onDismissRequest = onDismissRequest) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.85f)
+                .padding(8.dp)
+                .border(1.dp, GoldPrimary.copy(alpha = 0.2f), RoundedCornerShape(24.dp)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Staff Console 🍥",
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 18.sp,
+                            color = DarkText
+                        )
+                        Text(
+                            text = "Real-time fulfillment operations",
+                            fontSize = 11.sp,
+                            color = MutedSlate
+                        )
+                    }
+                    IconButton(onClick = onDismissRequest) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = MutedSlate)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Custom Subtab controller
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
+                        .background(Color(0xFFF5F5F5), RoundedCornerShape(12.dp))
+                        .padding(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    // Orders SubTab
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (selectedSubTab == 0) GoldPrimary else Color.Transparent)
+                            .clickable { selectedSubTab = 0 },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Live Orders",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (selectedSubTab == 0) Color.White else MutedSlate
+                        )
+                    }
+
+                    // Bookings SubTab
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (selectedSubTab == 1) GoldPrimary else Color.Transparent)
+                            .clickable { selectedSubTab = 1 },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Table Bookings",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (selectedSubTab == 1) Color.White else MutedSlate
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Dynamic display list
+                Box(modifier = Modifier.weight(1f)) {
+                    if (selectedSubTab == 0) {
+                        // Live Orders Screen Content
+                        if (liveOrders.isEmpty()) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text("No live customer orders found yet!", fontSize = 11.sp, color = MutedSlate)
+                            }
+                        } else {
+                            LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                items(liveOrders) { order ->
+                                    Card(
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFAFAFA)),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .border(1.dp, Color(0xFFEEEEEE), RoundedCornerShape(14.dp))
+                                    ) {
+                                        Column(modifier = Modifier.padding(12.dp)) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = "Order #${order.id}",
+                                                    fontWeight = FontWeight.ExtraBold,
+                                                    fontSize = 13.sp,
+                                                    color = DarkText
+                                                )
+                                                
+                                                val statusColor = when (order.status) {
+                                                    "Placed" -> Color(0xFFE53935)
+                                                    "Preparing" -> Color(0xFFFB8C00)
+                                                    "Ready" -> Color(0xFF43A047)
+                                                    else -> MutedSlate
+                                                }
+                                                Surface(
+                                                    color = statusColor.copy(alpha = 0.12f),
+                                                    shape = RoundedCornerShape(6.dp),
+                                                    modifier = Modifier.padding(start = 6.dp)
+                                                ) {
+                                                    Text(
+                                                        text = order.status,
+                                                        color = statusColor,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 10.sp,
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    )
+                                                }
+                                            }
+
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text("Branch: ${order.branchName}", fontSize = 11.sp, color = DarkText)
+                                            Text("Client: ${order.customerName} (${order.customerPhone})", fontSize = 11.sp, color = MutedSlate)
+                                            Text("Items: ${order.orderItemsText}", fontSize = 11.sp, color = MutedSlate, fontStyle = FontStyle.Italic)
+                                            Text("Total Paid: ₹${String.format(Locale.US, "%.2f", order.totalAmount)}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = GoldPrimary)
+
+                                            if (order.status != "Served") {
+                                                Spacer(modifier = Modifier.height(8.dp))
+                                                Button(
+                                                    onClick = {
+                                                        viewModel.advanceOrderStatus(order)
+                                                        playAndroidChime(viewModel, true)
+                                                    },
+                                                    colors = ButtonDefaults.buttonColors(containerColor = GoldPrimary),
+                                                    shape = RoundedCornerShape(10.dp),
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    contentPadding = PaddingValues(0.dp)
+                                                ) {
+                                                    val btnLabel = when (order.status) {
+                                                        "Placed" -> "Accept & Start Cook 🍜"
+                                                        "Preparing" -> "Mark Bowl Ready 🍲"
+                                                        "Ready" -> "Complete & Serve 🍥"
+                                                        else -> "Complete"
+                                                    }
+                                                    Text(btnLabel, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Live Bookings reservations screen
+                        if (liveBookings.isEmpty()) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text("No reservations listed yet!", fontSize = 11.sp, color = MutedSlate)
+                            }
+                        } else {
+                            LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                items(liveBookings) { booking ->
+                                    Card(
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFAFAFA)),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .border(1.dp, Color(0xFFEEEEEE), RoundedCornerShape(14.dp))
+                                    ) {
+                                        Column(modifier = Modifier.padding(12.dp)) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = "Booking #${booking.id}",
+                                                    fontWeight = FontWeight.ExtraBold,
+                                                    fontSize = 13.sp,
+                                                    color = DarkText
+                                                )
+                                                Text(
+                                                    text = "${booking.guestsCount} Guests",
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = GoldPrimary
+                                                )
+                                            }
+
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text("Branch: ${booking.branchName}", fontSize = 11.sp, color = DarkText)
+                                            Text("Guest: ${booking.customerName} (${booking.customerPhone})", fontSize = 11.sp, color = MutedSlate)
+                                            Text("Schedule: ${booking.date} @ ${booking.time}", fontSize = 11.sp, color = MutedSlate)
+                                            if (booking.specialRequests.trim().isNotEmpty()) {
+                                                Text("Note: ${booking.specialRequests}", fontSize = 10.sp, color = Color(0xFFD84315), fontStyle = FontStyle.Italic)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

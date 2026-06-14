@@ -265,10 +265,15 @@
             <div class="bg-gradient-to-r from-orange-950 to-orange-800 text-white rounded-3xl p-6 shadow-lg border border-amber-500/20">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h2 class="text-xl font-black tracking-tight flex items-center gap-2">
-                            🍥 Ichiraku Ninja Kitchen
-                        </h2>
-                        <p class="text-xs text-orange-200 font-light mt-0.5">Staff Portal • Realtime order fulfillment & dispatch console</p>
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-xl font-black tracking-tight flex items-center gap-2">
+                                🍥 Ichiraku Ninja Kitchen
+                            </h2>
+                            <button onclick="lockStaffArea()" class="bg-red-600/30 hover:bg-red-600/50 text-[10px] uppercase font-bold text-red-200 border border-red-500/40 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition" title="Lock staff console">
+                                🔒 Lock Console
+                            </button>
+                        </div>
+                        <p class="text-xs text-orange-200 font-light mt-1.5">Staff Portal • Realtime order fulfillment & dispatch console</p>
                     </div>
                     <div class="flex gap-2">
                         <div class="bg-white/10 px-3.5 py-1.5 rounded-xl text-center min-w-[75px]">
@@ -417,6 +422,38 @@
                     Apply & Exit
                 </button>
             </div>
+        </div>
+    </div>
+
+
+    <!-- MODAL -1: STAFF AUTHENTICATION SYSTEM GATEWAY -->
+    <div id="modal-staff-auth" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl border border-orange-100 overflow-hidden flex flex-col">
+            <!-- Header section styled with primary gradients -->
+            <div class="bg-gradient-to-r from-orange-950 to-orange-800 text-white p-5 flex items-center justify-between">
+                <div>
+                    <h3 class="text-base font-black tracking-tight flex items-center gap-2">Staff Gateway 🔐</h3>
+                    <p class="text-[10px] text-orange-200 font-light mt-0.5">Authorization required to access Ninja Console</p>
+                </div>
+                <button onclick="closeStaffAuthModal()" class="text-white hover:text-orange-200 text-lg font-bold">✕</button>
+            </div>
+            
+            <form onsubmit="event.preventDefault(); submitStaffAuth();" class="p-5 space-y-4">
+                <div class="space-y-1.5">
+                    <label class="block text-[10px] font-black tracking-wider uppercase text-muted-slate">Enter Secret Password</label>
+                    <input id="staff-auth-password" type="password" placeholder="••••••••••••" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-primary text-dark-text tracking-widest text-center" />
+                    <p id="staff-auth-error" class="text-red-600 text-[10px] font-bold hidden">⚠️ Access Denied: Incorrect Jutsu Password!</p>
+                </div>
+
+                <div class="border-t border-orange-50 pt-4 flex gap-3">
+                    <button type="button" onclick="closeStaffAuthModal()" class="flex-1 bg-white border border-gray-200 hover:bg-orange-50/50 text-dark-text font-bold text-xs py-2.5 rounded-xl transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 bg-gold-primary hover:bg-gold-primary-dark text-white font-bold text-xs py-2.5 rounded-xl shadow transition">
+                        Authenticate
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -861,6 +898,8 @@
         // Core Application State
         let state = {
             currentTab: 0, // 0=Branches, 1=Menu, 2=History, 3=Staff
+            previousTab: 0,
+            isStaffAuthenticated: false,
             selectedBranchId: 1, // Default Leaf Village
             cart: {}, // MenuItem ID -> Quantity
             bookings: [],
@@ -927,6 +966,11 @@
 
         // Main Tab Switcher
         function switchTab(index) {
+            if (index === 3 && !state.isStaffAuthenticated) {
+                state.previousTab = state.currentTab;
+                openStaffAuthModal();
+                return;
+            }
             state.currentTab = index;
             
             // Hide all tab screens
@@ -952,6 +996,56 @@
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
             updateUI();
+        }
+
+        // Staff Authentication Handlers
+        function openStaffAuthModal() {
+            document.getElementById('staff-auth-password').value = '';
+            document.getElementById('staff-auth-error').classList.add('hidden');
+            document.getElementById('modal-staff-auth').classList.remove('hidden');
+            if (typeof playChimeSound === 'function') {
+                playChimeSound('click');
+            }
+        }
+
+        function closeStaffAuthModal() {
+            document.getElementById('modal-staff-auth').classList.add('hidden');
+            if (typeof playChimeSound === 'function') {
+                playChimeSound('click');
+            }
+            // Re-highlight and restore previous highlighted navigation active state
+            const previous = state.previousTab !== undefined ? state.previousTab : 0;
+            switchTab(previous);
+        }
+
+        function submitStaffAuth() {
+            const passwordField = document.getElementById('staff-auth-password');
+            const errorField = document.getElementById('staff-auth-error');
+            const password = passwordField.value;
+
+            if (password === 'NarutoHokage') {
+                state.isStaffAuthenticated = true;
+                document.getElementById('modal-staff-auth').classList.add('hidden');
+                switchTab(3); // transition safely into staff screen representation
+                if (typeof playChimeSound === 'function') {
+                    playChimeSound('success');
+                }
+            } else {
+                errorField.classList.remove('hidden');
+                passwordField.focus();
+                if (typeof playChimeSound === 'function') {
+                    // beep sound
+                    playChimeSound('click');
+                }
+            }
+        }
+
+        function lockStaffArea() {
+            state.isStaffAuthenticated = false;
+            if (typeof playChimeSound === 'function') {
+                playChimeSound('click');
+            }
+            switchTab(0); // return safely to Locations board tab 0
         }
 
         // Sub Tab selector in History screen
