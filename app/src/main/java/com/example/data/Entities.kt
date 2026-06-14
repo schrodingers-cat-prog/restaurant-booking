@@ -39,6 +39,9 @@ data class Booking(
     val time: String,
     val guestsCount: Int,
     val specialRequests: String,
+    val tableId: String? = null,
+    val tableName: String? = null,
+    val tableSeats: Int? = null,
     val timestamp: Long = System.currentTimeMillis(),
     val isConfirmed: Boolean = false
 ) : Serializable

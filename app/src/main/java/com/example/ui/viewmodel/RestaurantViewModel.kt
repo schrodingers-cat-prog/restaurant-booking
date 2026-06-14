@@ -30,6 +30,41 @@ class RestaurantViewModel(application: Application) : AndroidViewModel(applicati
     private val _selectedBranchId = MutableStateFlow<Int?>(null)
     val selectedBranchId: StateFlow<Int?> = _selectedBranchId.asStateFlow()
 
+    // Preferences & Settings options State Flows
+    private val prefs = application.getSharedPreferences("ichiraku_prefs", android.content.Context.MODE_PRIVATE)
+
+    private val _currentTheme = MutableStateFlow(prefs.getString("settings_theme", "Orange") ?: "Orange")
+    val currentTheme: StateFlow<String> = _currentTheme.asStateFlow()
+
+    private val _currentTextSize = MutableStateFlow(prefs.getString("settings_text_size", "Medium") ?: "Medium")
+    val currentTextSize: StateFlow<String> = _currentTextSize.asStateFlow()
+
+    private val _soundFXEnabled = MutableStateFlow(prefs.getBoolean("settings_sound_enabled", true))
+    val soundFXEnabled: StateFlow<Boolean> = _soundFXEnabled.asStateFlow()
+
+    private val _defaultPartySize = MutableStateFlow(prefs.getInt("settings_default_party_size", 2))
+    val defaultPartySize: StateFlow<Int> = _defaultPartySize.asStateFlow()
+
+    fun updateTheme(themeName: String) {
+        prefs.edit().putString("settings_theme", themeName).apply()
+        _currentTheme.value = themeName
+    }
+
+    fun updateTextSize(textSizeName: String) {
+        prefs.edit().putString("settings_text_size", textSizeName).apply()
+        _currentTextSize.value = textSizeName
+    }
+
+    fun updateSoundFXEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("settings_sound_enabled", enabled).apply()
+        _soundFXEnabled.value = enabled
+    }
+
+    fun updateDefaultPartySize(size: Int) {
+        prefs.edit().putInt("settings_default_party_size", size).apply()
+        _defaultPartySize.value = size
+    }
+
     init {
         val database = AppDatabase.getDatabase(application)
         repository = RestaurantRepository(database.restaurantDao())
@@ -108,6 +143,9 @@ class RestaurantViewModel(application: Application) : AndroidViewModel(applicati
         time: String,
         guests: Int,
         specialRequests: String,
+        tableId: String? = null,
+        tableName: String? = null,
+        tableSeats: Int? = null,
         onSuccess: (Booking) -> Unit
     ) {
         viewModelScope.launch {
@@ -119,7 +157,10 @@ class RestaurantViewModel(application: Application) : AndroidViewModel(applicati
                 date = date,
                 time = time,
                 guestsCount = guests,
-                specialRequests = specialRequests
+                specialRequests = specialRequests,
+                tableId = tableId,
+                tableName = tableName,
+                tableSeats = tableSeats
             )
             val generatedId = repository.insertBooking(booking)
             val savedBooking = booking.copy(id = generatedId.toInt())

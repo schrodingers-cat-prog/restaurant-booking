@@ -16,9 +16,9 @@
                 extend: {
                     colors: {
                         'gold-primary': {
-                            DEFAULT: '#E65100', // Terracotta Warm Orange-Red
-                            light: '#FF8A50',
-                            dark: '#B22A00'
+                            DEFAULT: 'var(--color-primary, #E65100)', // Dynamic primary
+                            light: 'var(--color-primary-light, #FF8A50)',
+                            dark: 'var(--color-primary-dark, #B22A00)'
                         },
                         'amber-secondary': {
                             DEFAULT: '#FFB300', // Warm Amber
@@ -41,10 +41,16 @@
         }
     </script>
     <style>
+        :root {
+            --color-primary: #E65100;
+            --color-primary-light: #FF8A50;
+            --color-primary-dark: #B22A00;
+        }
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: #FCF9F2;
             color: #2E241E;
+            transition: font-size 0.15s ease-out;
         }
         h1, h2, h3, h4, h5, h6 {
             font-family: 'Space Grotesk', sans-serif;
@@ -58,11 +64,14 @@
             background: #FCF9F2;
         }
         ::-webkit-scrollbar-thumb {
-            background: #E6510033;
+            background: rgba(var(--color-primary), 0.2);
+            /* fallback */
+            background-color: var(--color-primary);
+            opacity: 0.2;
             border-radius: 999px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #E6510066;
+            opacity: 0.4;
         }
     </style>
 </head>
@@ -100,6 +109,14 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                     </svg>
                     <span id="cart-badge" class="absolute -top-1 -right-1 bg-amber-secondary text-dark-text text-[10px] font-extrabold w-5 h-5 flex items-center justify-center rounded-full border-2 border-orange-700 hidden">0</span>
+                </button>
+
+                <!-- Options / Settings Button -->
+                <button id="settings-nav-btn" onclick="openSettingsModal()" class="relative bg-white/20 hover:bg-white/30 transition p-2.5 rounded-full flex items-center justify-center" title="App Settings">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
                 </button>
             </div>
         </div>
@@ -241,10 +258,55 @@
                 <!-- Dynamically Rendered -->
             </div>
         </section>
+
+        <!-- STAFF PANEL SCREEN -->
+        <section id="screen-staff" class="tab-content hidden space-y-6">
+            <!-- Header section -->
+            <div class="bg-gradient-to-r from-orange-950 to-orange-800 text-white rounded-3xl p-6 shadow-lg border border-amber-500/20">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl font-black tracking-tight flex items-center gap-2">
+                            🍥 Ichiraku Ninja Kitchen
+                        </h2>
+                        <p class="text-xs text-orange-200 font-light mt-0.5">Staff Portal • Realtime order fulfillment & dispatch console</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="bg-white/10 px-3.5 py-1.5 rounded-xl text-center min-w-[75px]">
+                            <span id="staff-pending-orders-badge" class="block text-sm font-black text-amber-200">0</span>
+                            <span class="text-[9px] uppercase font-bold text-orange-200/80 tracking-wider">Pending Orders</span>
+                        </div>
+                        <div class="bg-white/10 px-3.5 py-1.5 rounded-xl text-center min-w-[75px]">
+                            <span id="staff-pending-bookings-badge" class="block text-sm font-black text-amber-200">0</span>
+                            <span class="text-[9px] uppercase font-bold text-orange-200/80 tracking-wider">Pending Tables</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Toggles: Orders vs Reservations -->
+            <div class="flex border-b border-orange-100 pb-0 gap-6">
+                <button id="staff-tab-orders" onclick="switchStaffSubTab('orders')" class="pb-3 text-sm font-bold border-b-2 border-gold-primary text-gold-primary transition">
+                    🍲 Live Orders
+                </button>
+                <button id="staff-tab-bookings" onclick="switchStaffSubTab('bookings')" class="pb-3 text-sm font-semibold border-b-2 border-transparent text-muted-slate hover:text-dark-text transition">
+                    📅 Table Bookings
+                </button>
+            </div>
+
+            <!-- Orders panel -->
+            <div id="staff-orders-panel" class="space-y-4">
+                <!-- Dynamically Rendered -->
+            </div>
+
+            <!-- Bookings panel -->
+            <div id="staff-bookings-panel" class="space-y-4 hidden">
+                <!-- Dynamically Rendered -->
+            </div>
+        </section>
     </main>
 
     <!-- Bottom Navigation Bar (Mobile) & Desktop Sidebar -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-orange-100 shadow-xl py-1.5 px-6 flex justify-around md:justify-center md:gap-16 z-30">
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-orange-100 shadow-xl py-1.5 px-3 flex justify-around md:justify-center md:gap-12 z-30">
         <button id="nav-tab-0" onclick="switchTab(0)" class="flex flex-col items-center gap-0.5 text-gold-primary select-none w-16">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -263,7 +325,100 @@
             </svg>
             <span class="text-[10px] font-medium">History</span>
         </button>
+        <button id="nav-tab-3" onclick="switchTab(3)" class="flex flex-col items-center gap-0.5 text-muted-slate hover:text-dark-text select-none w-16">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span class="text-[10px] font-medium">Staff Area</span>
+        </button>
     </nav>
+
+
+    <!-- MODAL 0: preferences, THEMES & AUDIO-VISUAL OPTIONS -->
+    <div id="modal-settings" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl border border-orange-100 overflow-hidden flex flex-col">
+            <!-- Header section styled with primary gradients -->
+            <div class="bg-gradient-to-r from-gold-primary-dark to-gold-primary text-white p-5 flex items-center justify-between">
+                <div>
+                    <h3 class="text-base font-black tracking-tight flex items-center gap-2">Preferences Hub ⚙️</h3>
+                    <p class="text-[10px] text-orange-100 font-light mt-0.5">Personalize themes, scale and layout alerts</p>
+                </div>
+                <button onclick="closeSettingsModal()" class="text-white hover:text-orange-200 text-lg font-bold">✕</button>
+            </div>
+            
+            <!-- Body selections scrollable -->
+            <div class="p-5 space-y-4 overflow-y-auto max-h-[70vh]">
+                <!-- Item 1: Theme selection -->
+                <div class="space-y-1.5">
+                    <label class="block text-[10px] font-black tracking-wider uppercase text-muted-slate">Select App Theme</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <!-- Orange -->
+                        <button onclick="changeTheme('orange')" class="theme-btn flex flex-col items-center justify-center p-2 rounded-xl border-2 border-transparent bg-orange-50/40 hover:bg-orange-50 transition" id="theme-btn-orange">
+                            <span class="w-6 h-6 rounded-full bg-[#E65100] border-2 border-white shadow-sm"></span>
+                            <span class="text-[8px] font-bold mt-1 text-dark-text">Terracotta</span>
+                        </button>
+                        <!-- Blue -->
+                        <button onclick="changeTheme('blue')" class="theme-btn flex flex-col items-center justify-center p-2 rounded-xl border-2 border-transparent bg-indigo-50/40 hover:bg-indigo-50 transition" id="theme-btn-blue">
+                            <span class="w-6 h-6 rounded-full bg-[#3F51B5] border-2 border-white shadow-sm"></span>
+                            <span class="text-[8px] font-bold mt-1 text-dark-text">Shinobi</span>
+                        </button>
+                        <!-- Green -->
+                        <button onclick="changeTheme('green')" class="theme-btn flex flex-col items-center justify-center p-2 rounded-xl border-2 border-transparent bg-emerald-50/40 hover:bg-emerald-50 transition" id="theme-btn-green">
+                            <span class="w-6 h-6 rounded-full bg-[#2E7D32] border-2 border-white shadow-sm"></span>
+                            <span class="text-[8px] font-bold mt-1 text-dark-text">Sage</span>
+                        </button>
+                        <!-- Gold -->
+                        <button onclick="changeTheme('gold')" class="theme-btn flex flex-col items-center justify-center p-2 rounded-xl border-2 border-transparent bg-amber-50/40 hover:bg-amber-50 transition" id="theme-btn-gold">
+                            <span class="w-6 h-6 rounded-full bg-[#FF8F00] border-2 border-white shadow-sm"></span>
+                            <span class="text-[8px] font-bold mt-1 text-dark-text">Sunny Gold</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Item 2: Root font size scaler -->
+                <div class="space-y-1.5 border-t border-orange-50 pt-3">
+                    <label class="block text-[10px] font-black tracking-wider uppercase text-muted-slate">Adjust Text Size</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="changeTextSize('small')" id="ts-btn-small" class="py-2 text-xs font-bold rounded-xl border border-gray-100 bg-white text-dark-text hover:bg-orange-50/50 transition">Small</button>
+                        <button onclick="changeTextSize('medium')" id="ts-btn-medium" class="py-2 text-xs font-bold rounded-xl border border-gray-100 bg-white text-dark-text hover:bg-orange-50/50 transition">Default</button>
+                        <button onclick="changeTextSize('large')" id="ts-btn-large" class="py-2 text-xs font-bold rounded-xl border border-gray-100 bg-white text-dark-text hover:bg-orange-50/50 transition">Large</button>
+                    </div>
+                </div>
+
+                <!-- Item 3: Sound effects toggle -->
+                <div class="flex items-center justify-between border-t border-orange-50 pt-3">
+                    <div class="flex flex-col pr-3">
+                        <label class="text-[10px] font-black tracking-wider uppercase text-muted-slate">Sound Feedback Chimes</label>
+                        <span class="text-[9px] text-muted-slate opacity-80">Synthesize audio bells on clicks & bookings</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer select-none">
+                        <input id="settings-sound-toggle" type="checkbox" onchange="toggleSound(this.checked)" class="sr-only peer">
+                        <div class="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gold-primary"></div>
+                    </label>
+                </div>
+
+                <!-- Item 4: Fast Party booking selector -->
+                <div class="space-y-1.5 border-t border-orange-50 pt-3">
+                    <label class="block text-[10px] font-black tracking-wider uppercase text-muted-slate">Default Party Guests</label>
+                    <p class="text-[9px] text-muted-slate font-light leading-relaxed">Auto-selects custom guest capacity numbers during reservation map checkups.</p>
+                    <select id="settings-default-guests" onchange="changeDefaultGuests(this.value)" class="w-full bg-white border border-gray-200 rounded-xl px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-gold-primary text-dark-text">
+                        <option value="1">1 Person</option>
+                        <option value="2">2 Persons</option>
+                        <option value="4">4 Persons</option>
+                        <option value="6">6 Persons (Ninja Squad)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Modal Action Buttons Footer -->
+            <div class="bg-sand-bg border-t border-orange-50 p-4 flex justify-between items-center text-[10px]">
+                <span class="text-muted-slate font-light">Configs auto-save instantly</span>
+                <button onclick="closeSettingsModal()" class="bg-gold-primary text-white border border-transparent hover:border-gold-primary-dark font-bold px-4 py-2 rounded-xl shadow transition">
+                    Apply & Exit
+                </button>
+            </div>
+        </div>
+    </div>
 
 
     <!-- MODAL 1: BRANCH DETAIL DIALOG (WITH REVIEWS) -->
@@ -353,9 +508,9 @@
 
     <!-- MODAL 2: TABLE RESERVATION BOOK DELEGATOR -->
     <div id="modal-table-booking" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-orange-100 overflow-hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-orange-100 max-h-[92vh] overflow-y-auto flex flex-col">
             <!-- Header layout -->
-            <div class="bg-gradient-to-r from-gold-primary-dark to-gold-primary text-white p-5 flex items-center justify-between">
+            <div class="bg-gradient-to-r from-gold-primary-dark to-gold-primary text-white p-5 flex items-center justify-between sticky top-0 z-10 shadow-sm">
                 <div>
                     <h3 class="text-lg font-bold">Reserve Fine-Dine Table</h3>
                     <p id="booking-modal-subtitle" class="text-xs text-orange-100 font-light mt-0.5">At Leaf Village Branch</p>
@@ -373,10 +528,11 @@
                     <label class="block text-xs font-semibold text-muted-slate mb-1">Contact Phone</label>
                     <input type="tel" id="booking-phone" required placeholder="e.g. +91 78900 20002" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-primary" />
                 </div>
+                
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-muted-slate mb-1">Guests Count</label>
-                        <select id="booking-guests" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-primary">
+                        <select id="booking-guests" onchange="renderFloorPlan()" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-primary">
                             <option value="1">1 Person</option>
                             <option value="2" selected>2 Persons</option>
                             <option value="4">4 Persons</option>
@@ -387,12 +543,13 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-muted-slate mb-1">Reservation Date</label>
-                        <input type="date" id="booking-date" required class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-primary" />
+                        <input type="date" id="booking-date" required onchange="renderFloorPlan()" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-primary" />
                     </div>
                 </div>
+                
                 <div>
                     <label class="block text-xs font-semibold text-muted-slate mb-1">Preferred Time Slot</label>
-                    <select id="booking-time" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-primary">
+                    <select id="booking-time" onchange="renderFloorPlan()" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-primary">
                         <option value="11:30 AM">11:30 AM (Lunch)</option>
                         <option value="01:00 PM">01:00 PM</option>
                         <option value="02:30 PM">02:30 PM</option>
@@ -401,13 +558,50 @@
                         <option value="09:30 PM">09:30 PM</option>
                     </select>
                 </div>
+
+                <!-- Top View Interactive Seating Floor Plan -->
+                <div class="border border-orange-100 rounded-2xl p-3.5 bg-orange-50/40 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div class="flex flex-col">
+                            <label class="text-[11px] font-black tracking-tight text-dark-text">Select Table (Bird's Eye View Layout)</label>
+                            <span class="text-[9px] text-muted-slate font-light">Custom layout scaled for each branch</span>
+                        </div>
+                        <span id="booking-selected-table-label" class="text-[10px] font-black text-rose-500 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-lg">Select Table ⏳</span>
+                    </div>
+                    
+                    <!-- Floor Plan Canvas/Container -->
+                    <div class="relative w-full h-44 bg-amber-50/50 rounded-2xl border border-orange-100 overflow-hidden shadow-inner flex items-center justify-center" id="booking-floorplan-container">
+                        <!-- Custom layout and tables rendered dynamically -->
+                    </div>
+                    
+                    <!-- Table parameters warnings -->
+                    <div id="booking-table-alert" class="hidden text-[10px] bg-amber-50 text-amber-800 border border-amber-200/50 rounded-xl p-2.5 text-center font-bold">
+                        ⚠️ Alert: The selected table accommodates maximum occupancy limit. Please review guests count.
+                    </div>
+
+                    <div class="flex justify-between items-center text-[9px] bg-white p-2 rounded-xl border border-orange-50">
+                        <div class="flex items-center gap-1.5">
+                            <span class="inline-block w-2.5 h-2.5 bg-emerald-500 rounded-full shadow-sm"></span>
+                            <span class="text-muted-slate">Available</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="inline-block w-2.5 h-2.5 bg-slate-300 rounded-full shadow-sm"></span>
+                            <span class="text-muted-slate">Occupied</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 flex-row">
+                            <span class="inline-block w-2.5 h-2.5 bg-amber-500 rounded-full shadow-md animate-pulse"></span>
+                            <span class="text-dark-text font-bold">Selected</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div>
                     <label class="block text-xs font-semibold text-muted-slate mb-1">Special Chef/Broth Request (Optional)</label>
                     <textarea id="booking-requests" rows="2" placeholder="e.g. Extra narutomaki swirl, separate chili condiments, etc." class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-primary"></textarea>
                 </div>
 
-                <div class="pt-2">
-                    <button type="submit" class="w-full bg-gold-primary hover:bg-gold-primary-dark text-white rounded-2xl py-3.5 text-sm font-bold shadow-lg transition">
+                <div class="pt-1">
+                    <button type="submit" class="w-full bg-gradient-to-r from-gold-primary to-amber-500 hover:from-gold-primary-dark hover:to-amber-600 text-white rounded-2xl py-3.5 text-sm font-black shadow-lg transition duration-200 transform active:scale-95">
                         Confirm Table Reservation
                     </button>
                 </div>
@@ -591,7 +785,16 @@
                 imageLabel: "heritage", // will use thematic gradient illustration
                 openingHours: "10:00 AM - 11:30 PM",
                 latitude: 35.0116,
-                longitude: 135.7681
+                longitude: 135.7681,
+                tables: [
+                    { id: "T1", name: "Hokage Table 1", seats: 6, shape: "round", x: 12, y: 15 },
+                    { id: "T2", name: "Team 7 Table 2", seats: 4, shape: "square", x: 45, y: 15 },
+                    { id: "T3", name: "Academy Counter 3", seats: 2, shape: "square", x: 78, y: 15 },
+                    { id: "T4", name: "Uchiha Booth 4", seats: 4, shape: "booth", x: 12, y: 55 },
+                    { id: "T5", name: "Hyuga Garden 5", seats: 8, shape: "long", x: 45, y: 55 },
+                    { id: "T6", name: "Ichiraku Bar 6", seats: 2, shape: "bar", x: 80, y: 50 },
+                    { id: "T7", name: "Ichiraku Bar 7", seats: 2, shape: "bar", x: 80, y: 75 }
+                ]
             },
             {
                 id: 2,
@@ -602,7 +805,14 @@
                 imageLabel: "bistro",
                 openingHours: "11:00 AM - 12:30 AM",
                 latitude: 34.6937,
-                longitude: 135.5023
+                longitude: 135.5023,
+                tables: [
+                    { id: "S1", name: "Oasis Pavilion S1", seats: 8, shape: "long", x: 15, y: 20 },
+                    { id: "S2", name: "Kazekage Canopy S2", seats: 2, shape: "round", x: 55, y: 20 },
+                    { id: "S3", name: "Desert Rose Corner S3", seats: 4, shape: "square", x: 80, y: 20 },
+                    { id: "S4", name: "Sandstorm Lounge S4", seats: 6, shape: "booth", x: 25, y: 60 },
+                    { id: "S5", name: "Sun-Patio S5", seats: 4, shape: "square", x: 70, y: 60 }
+                ]
             },
             {
                 id: 3,
@@ -613,7 +823,14 @@
                 imageLabel: "coastal",
                 openingHours: "11:30 AM - 11:00 PM",
                 latitude: 35.4437,
-                longitude: 139.6380
+                longitude: 139.6380,
+                tables: [
+                    { id: "M1", name: "Water Cabin M1", seats: 2, shape: "bar", x: 15, y: 15 },
+                    { id: "M2", name: "Deep Steam M2", seats: 4, shape: "booth", x: 50, y: 15 },
+                    { id: "M3", name: "Water's Edge M3", seats: 6, shape: "round", x: 80, y: 20 },
+                    { id: "M4", name: "Plump Prawn M4", seats: 4, shape: "square", x: 20, y: 60 },
+                    { id: "M5", name: "Lake Pavilion M5", seats: 12, shape: "long", x: 62, y: 60 }
+                ]
             }
         ];
 
@@ -643,13 +860,14 @@
 
         // Core Application State
         let state = {
-            currentTab: 0, // 0=Branches, 1=Menu, 2=History
+            currentTab: 0, // 0=Branches, 1=Menu, 2=History, 3=Staff
             selectedBranchId: 1, // Default Leaf Village
             cart: {}, // MenuItem ID -> Quantity
             bookings: [],
             orders: [],
             reviews: [],
             activeHistorySubTab: 'orders', // 'orders' or 'bookings'
+            staffActiveSubTab: 'orders', // 'orders' or 'bookings'
             reviewComposerRating: 5,
             checkoutDeliveryType: 'Dine-In'
         };
@@ -657,6 +875,7 @@
         // Initialize state on DOM load
         document.addEventListener('DOMContentLoaded', () => {
             loadFromLocalStorage();
+            initSettings();
             initializeUI();
             updateUI();
         });
@@ -714,12 +933,14 @@
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             
             // Update nav bars highlight
-            for (let i = 0; i < 3; i++) {
+            for (let i = 0; i < 4; i++) {
                 const navBtn = document.getElementById(`nav-tab-${i}`);
-                if (i === index) {
-                    navBtn.className = "flex flex-col items-center gap-1 text-gold-primary select-none w-16";
-                } else {
-                    navBtn.className = "flex flex-col items-center gap-1 text-muted-slate hover:text-dark-text select-none w-16";
+                if (navBtn) {
+                    if (i === index) {
+                        navBtn.className = "flex flex-col items-center gap-0.5 text-gold-primary select-none w-16";
+                    } else {
+                        navBtn.className = "flex flex-col items-center gap-0.5 text-muted-slate hover:text-dark-text select-none w-16";
+                    }
                 }
             }
 
@@ -727,6 +948,7 @@
             if (index === 0) document.getElementById('screen-branches').classList.remove('hidden');
             if (index === 1) document.getElementById('screen-menu').classList.remove('hidden');
             if (index === 2) document.getElementById('screen-history').classList.remove('hidden');
+            if (index === 3) document.getElementById('screen-staff').classList.remove('hidden');
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
             updateUI();
@@ -760,6 +982,7 @@
             updateMenuScreen();
             updateCartSidebar();
             updateHistoryScreen();
+            updateStaffScreen();
         }
 
         // --------------------------------------------------------------------
@@ -954,16 +1177,164 @@
         // TABLE RESERVATION FORM
         // --------------------------------------------------------------------
         let bookingBranchId = null;
+        let bookingSelectedTableId = null;
+        let bookingSelectedTableName = "";
+        let bookingSelectedTableSeats = null;
 
         function openBookingModal(branchId = state.selectedBranchId) {
             bookingBranchId = branchId;
+            bookingSelectedTableId = null;
+            bookingSelectedTableName = "";
+            bookingSelectedTableSeats = null;
+
             const branch = SEEDED_BRANCHES.find(b => b.id === branchId);
             document.getElementById('booking-modal-subtitle').textContent = `At ${branch.name} sanctuary`;
+
+            // Set default date to today if none selected
+            const dateInput = document.getElementById('booking-date');
+            if (dateInput && !dateInput.value) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
+            }
+
             document.getElementById('modal-table-booking').classList.remove('hidden');
+            renderFloorPlan();
         }
 
         function closeBookingModal() {
             document.getElementById('modal-table-booking').classList.add('hidden');
+        }
+
+        function renderFloorPlan() {
+            const container = document.getElementById('booking-floorplan-container');
+            if (!container) return;
+
+            const branch = SEEDED_BRANCHES.find(b => b.id === bookingBranchId);
+            if (!branch) {
+                container.innerHTML = `<span class="text-xs text-muted-slate text-center">No branch loaded</span>`;
+                return;
+            }
+
+            const guestsCount = parseInt(document.getElementById('booking-guests').value) || 2;
+            const resDate = document.getElementById('booking-date').value;
+            const resTime = document.getElementById('booking-time').value;
+
+            // Let's theme background according to imageLabel
+            let bgClass = "bg-amber-50/70";
+            let borderClass = "border-amber-200";
+            let floorLabel = "Dining Hall Floor Layout";
+
+            if (branch.imageLabel === "heritage") {
+                bgClass = "bg-[radial-gradient(#fdf5e6_1.5px,transparent_1.5px)] [background-size:16px_16px] bg-orange-50/90";
+                borderClass = "border-amber-300";
+                floorLabel = "🍁 Traditional Ramen Sanctuary Floor";
+            } else if (branch.imageLabel === "bistro") {
+                bgClass = "bg-[radial-gradient(#f2e8cf_1.5px,transparent_1.5px)] [background-size:20px_20px] bg-yellow-50/75";
+                borderClass = "border-amber-200";
+                floorLabel = "🌵 Cozy Sandstorm Wind Shelter";
+            } else if (branch.imageLabel === "coastal") {
+                bgClass = "bg-[radial-gradient(#e0f2fe_1.5px,transparent_1.5px)] [background-size:16px_16px] bg-sky-50/70";
+                borderClass = "border-sky-200";
+                floorLabel = "🌊 Waterfront Mist Floating Docks";
+            }
+
+            let html = `
+                <!-- Background visual frame label -->
+                <div class="absolute top-1.5 left-2.5 text-[8px] font-black uppercase tracking-wider text-orange-950/45 pointer-events-none select-none">
+                    ${floorLabel}
+                </div>
+            `;
+
+            if (!branch.tables || branch.tables.length === 0) {
+                container.innerHTML = `<div class="text-xs text-muted-slate p-4 text-center">No seating blueprint configured for this branch.</div>`;
+                return;
+            }
+
+            // Draw tables
+            html += branch.tables.map(table => {
+                // Determine if this table is reserved/occupied for this date and time
+                const isOccupied = state.bookings.some(b => 
+                    b.branchId === bookingBranchId && 
+                    b.date === resDate && 
+                    b.time === resTime &&
+                    b.tableId === table.id
+                );
+
+                const isSelected = (bookingSelectedTableId === table.id);
+
+                // Styling logic per shape
+                let shapeStyle = "";
+                if (table.shape === "round") shapeStyle = "rounded-full aspect-square";
+                else if (table.shape === "square") shapeStyle = "rounded-xl";
+                else if (table.shape === "booth") shapeStyle = "rounded-xl border-2 border-dashed";
+                else if (table.shape === "long") shapeStyle = "rounded-2xl";
+                else if (table.shape === "bar") shapeStyle = "rounded-full w-8 h-8";
+
+                // Status coloring
+                let stateColor = "";
+                let cursorAndPointer = "cursor-pointer";
+
+                if (isOccupied) {
+                    stateColor = "bg-slate-200 border-slate-300 text-slate-400";
+                    cursorAndPointer = "cursor-not-allowed opacity-50";
+                } else if (isSelected) {
+                    stateColor = "bg-amber-500 border-amber-600 text-white ring-4 ring-amber-400/45 font-black";
+                } else {
+                    stateColor = "bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100 hover:border-emerald-400";
+                }
+
+                // Table dimension classes
+                let widthHeight = "w-16 h-12";
+                if (table.shape === "round") widthHeight = "w-14 h-14";
+                if (table.shape === "long") widthHeight = "w-20 h-11";
+                if (table.shape === "bar") widthHeight = "w-10 h-10";
+
+                // Click event string building
+                const clickEvent = isOccupied ? "" : `onclick="selectBookingTable('${table.id}', '${table.name}', ${table.seats})"`;
+
+                return `
+                    <div ${clickEvent} 
+                         class="absolute flex flex-col items-center justify-center border text-[9px] font-bold transition duration-200 select-none shadow-sm ${shapeStyle} ${stateColor} ${widthHeight} ${cursorAndPointer}"
+                         style="left: ${table.x}%; top: ${table.y}%; transform: translate(-50%, -50%);"
+                         title="${table.name} (${table.seats} Pax)"
+                    >
+                        <span class="block tracking-tighter text-[8px] truncate max-w-full px-1">${table.id}</span>
+                        <span class="block text-[7px] opacity-80">Max ${table.seats}</span>
+                    </div>
+                `;
+            }).join('');
+
+            // Container visual classes update
+            container.className = `relative w-full h-44 border overflow-hidden rounded-2xl shadow-inner transition duration-300 ${bgClass} ${borderClass}`;
+            container.innerHTML = html;
+
+            // Update Selected Table Label text display
+            const labelEl = document.getElementById('booking-selected-table-label');
+            const alertEl = document.getElementById('booking-table-alert');
+
+            if (bookingSelectedTableId) {
+                labelEl.textContent = `Selected: ${bookingSelectedTableName} (Max ${bookingSelectedTableSeats})`;
+                labelEl.className = "text-[10px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg animate-pulse";
+                
+                // Show occupancy warning if guests count exceed max allowed table seats
+                if (guestsCount > bookingSelectedTableSeats) {
+                    alertEl.textContent = `⚠️ Warning: Your guests count (${guestsCount}) exceeds the table's maximum allowed capacity of ${bookingSelectedTableSeats} people! Please select a larger table or adjust guest count.`;
+                    alertEl.classList.remove('hidden');
+                } else {
+                    alertEl.classList.add('hidden');
+                }
+            } else {
+                labelEl.textContent = "Select Table ⏳";
+                labelEl.className = "text-[10px] font-black text-rose-500 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-lg";
+                alertEl.classList.add('hidden');
+            }
+        }
+
+        function selectBookingTable(id, name, seats) {
+            bookingSelectedTableId = id;
+            bookingSelectedTableName = name;
+            bookingSelectedTableSeats = seats;
+            renderFloorPlan();
         }
 
         function handleBookingSubmit(e) {
@@ -976,6 +1347,15 @@
             const requests = document.getElementById('booking-requests').value.trim();
             const branch = SEEDED_BRANCHES.find(b => b.id === bookingBranchId);
 
+            if (!bookingSelectedTableId) {
+                alert("Please select a specific table on the bird's-eye view layout map before booking!");
+                return;
+            }
+            if (guests > bookingSelectedTableSeats) {
+                alert(`The selected table (${bookingSelectedTableName}) only allows a maximum of ${bookingSelectedTableSeats} people. Your booking is for ${guests} guests. Please select a larger table or reduce guests count.`);
+                return;
+            }
+
             const newBooking = {
                 id: Date.now(),
                 branchId: bookingBranchId,
@@ -986,12 +1366,16 @@
                 time: time,
                 guestsCount: guests,
                 specialRequests: requests,
+                tableId: bookingSelectedTableId,
+                tableName: bookingSelectedTableName,
+                tableSeats: bookingSelectedTableSeats,
                 timestamp: Date.now(),
                 isConfirmed: false
             };
 
             state.bookings.unshift(newBooking);
             saveToLocalStorage();
+            playChimeSound('success');
             document.getElementById('booking-form').reset();
             closeBookingModal();
 
@@ -1280,6 +1664,7 @@
             state.orders.unshift(newOrder);
             state.cart = {}; // Empty cart
             saveToLocalStorage();
+            playChimeSound('success');
             
             // Reset checkout text
             document.getElementById('cart-customer-name').value = '';
@@ -1317,6 +1702,7 @@
                     <div><strong>Date Proposed:</strong> ${data.date}</div>
                     <div><strong>Prefer Time:</strong> ${data.time}</div>
                     <div><strong>Gather Size:</strong> ${data.guestsCount} Ninja Guests</div>
+                    <div><strong>Specific Table:</strong> ${data.tableName || 'N/A'} (ID: ${data.tableId || 'N/A'})</div>
                     <div class="border-t border-orange-100/50 pt-2 text-[10px] text-muted-slate">
                         <strong>Special Request:</strong> ${requests}
                     </div>
@@ -1360,6 +1746,8 @@
             let text = "";
             if (activeReceiptType === 'booking') {
                 const reqText = activeReceiptData.specialRequests.trim() === "" ? "None" : activeReceiptData.specialRequests;
+                const tblName = activeReceiptData.tableName || 'N/A';
+                const tblId = activeReceiptData.tableId || 'N/A';
                 text = `Konnichiwa ${activeReceiptData.customerName}! 📅\n` +
                        `Your table reservation request at *${activeReceiptData.branchName}* is *CONFIRMED*!\n` +
                        "--------------------------------------\n" +
@@ -1368,6 +1756,7 @@
                        `👥 *Guests*: ${activeReceiptData.guestsCount} Persons\n` +
                        `📅 *Date*: ${activeReceiptData.date}\n` +
                        `🕒 *Time*: ${activeReceiptData.time}\n` +
+                       `🪑 *Specific Table*: ${tblName} (ID: ${tblId})\n` +
                        `💬 *Special Request*: ${reqText}\n` +
                        "--------------------------------------\n\n" +
                        "We look forward to serving your hot broth! Thank you for choosing Ichiraku Ramen!";
@@ -1576,7 +1965,7 @@
                             </div>
                             <div class="text-right">
                                 <span class="bg-amber-50 text-amber-700 border border-amber-100 rounded-full px-2.5 py-0.5 text-[9px] font-bold">
-                                    Awaiting Confirm
+                                    ${b.isConfirmed ? 'Confirmed ✅' : 'Awaiting Confirm ⏳'}
                                 </span>
                                 <p class="text-[9px] text-muted-slate mt-0.5">${dateStr}</p>
                             </div>
@@ -1585,6 +1974,7 @@
                         <div class="text-xs text-dark-text space-y-1 bg-sand-bg p-3 rounded-2xl">
                             <div><strong>Proposed Date:</strong> ${b.date} at ${b.time}</div>
                             <div><strong>Gathering:</strong> ${b.guestsCount} Ninja Guests</div>
+                            <div><strong>Selected Table:</strong> ${b.tableName || 'N/A'} (ID: ${b.tableId || 'N/A'})</div>
                             <div><strong>Customer Name:</strong> ${b.customerName} (${b.customerPhone})</div>
                             <div class="border-t border-orange-100/50 pt-1.5 mt-1.5">
                                 <strong>Requests:</strong>
@@ -1601,6 +1991,476 @@
                     `;
                 }).join('');
             }
+        }
+
+        // --------------------------------------------------------------------
+        // STAFF PORTAL CONTROLS & HANDLERS
+        // --------------------------------------------------------------------
+        function switchStaffSubTab(sub) {
+            state.staffActiveSubTab = sub || 'orders';
+            const ordersBtn = document.getElementById('staff-tab-orders');
+            const bookingsBtn = document.getElementById('staff-tab-bookings');
+            const ordersPanel = document.getElementById('staff-orders-panel');
+            const bookingsPanel = document.getElementById('staff-bookings-panel');
+
+            if (state.staffActiveSubTab === 'orders') {
+                ordersBtn.className = "pb-3 text-sm font-bold border-b-2 border-gold-primary text-gold-primary transition";
+                bookingsBtn.className = "pb-3 text-sm font-semibold border-b-2 border-transparent text-muted-slate hover:text-dark-text transition";
+                ordersPanel.classList.remove('hidden');
+                bookingsPanel.classList.add('hidden');
+            } else {
+                ordersBtn.className = "pb-3 text-sm font-semibold border-b-2 border-transparent text-muted-slate hover:text-dark-text transition";
+                bookingsBtn.className = "pb-3 text-sm font-bold border-b-2 border-gold-primary text-gold-primary transition";
+                ordersPanel.classList.add('hidden');
+                bookingsPanel.classList.remove('hidden');
+            }
+            updateStaffScreen();
+        }
+
+        function updateStaffScreen() {
+            const ordersPanel = document.getElementById('staff-orders-panel');
+            const bookingsPanel = document.getElementById('staff-bookings-panel');
+            if (!ordersPanel || !bookingsPanel) return;
+
+            // Count pending items
+            const pendingOrdersCount = state.orders.filter(o => o.status === 'Placed').length;
+            const pendingBookingsCount = state.bookings.filter(b => !b.isConfirmed).length;
+
+            document.getElementById('staff-pending-orders-badge').textContent = pendingOrdersCount;
+            document.getElementById('staff-pending-bookings-badge').textContent = pendingBookingsCount;
+
+            // Render Orders
+            if (state.orders.length === 0) {
+                ordersPanel.innerHTML = `
+                <div class="text-center py-12 bg-white rounded-3xl border border-orange-100">
+                    <p class="text-3xl">🍲</p>
+                    <p class="text-sm font-bold text-dark-text mt-2">Zero Customer Orders Recieved</p>
+                    <p class="text-xs text-slate-400 mt-1">Bowls of ramen ordered will list here for staff confirmation.</p>
+                </div>
+                `;
+            } else {
+                ordersPanel.innerHTML = state.orders.map(o => {
+                    const status = o.status || 'Placed';
+                    const dateStr = new Date(o.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    
+                    let badgeClass = '';
+                    let badgeLabel = status;
+                    if (status === 'Placed') {
+                        badgeClass = 'bg-orange-50 text-orange-700 border-orange-100/50';
+                        badgeLabel = 'Needs Confirm ⏳';
+                    } else if (status === 'Preparing') {
+                        badgeClass = 'bg-blue-50 text-blue-700 border-blue-100/50';
+                        badgeLabel = 'Preparing 🍳';
+                    } else if (status === 'Ready') {
+                        badgeClass = 'bg-amber-50 text-amber-700 border-amber-200/50';
+                        badgeLabel = 'Ready 🍜';
+                    } else if (status === 'Served') {
+                        badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200/50';
+                        badgeLabel = 'Served ✅';
+                    }
+
+                    let actionSection = '';
+                    if (status === 'Placed') {
+                        actionSection = `
+                            <button onclick="confirmOrderFromStaff(${o.id})" class="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs py-3 px-4 rounded-2xl shadow transition duration-200 flex items-center justify-center gap-1.5 hover:scale-[1.01]">
+                                💬 Confirm Order & Send Customer Notification
+                            </button>
+                        `;
+                    } else {
+                        let nextText = '';
+                        let icon = '🍳';
+                        let colorClass = 'from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700';
+                        if (status === 'Preparing') {
+                            nextText = 'Mark Ready';
+                            icon = '🍜';
+                        } else if (status === 'Ready') {
+                            nextText = 'Mark Served';
+                            icon = '✅';
+                            colorClass = 'from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700';
+                        }
+
+                        if (status !== 'Served') {
+                            actionSection = `
+                                <div class="flex items-center justify-between bg-orange-50/40 p-3 rounded-2xl border border-orange-100/30">
+                                    <span class="text-xs text-muted-slate">Current: <strong class="text-orange-700 font-bold">${status}</strong></span>
+                                    <button onclick="advanceOrderStatusFromStaff(${o.id})" class="bg-gradient-to-r ${colorClass} text-white font-bold text-xs px-4 py-2 rounded-xl transition shadow">
+                                        ${icon} ${nextText}
+                                    </button>
+                                </div>
+                            `;
+                        } else {
+                            actionSection = `
+                                <div class="bg-emerald-50 text-emerald-800 p-3 rounded-2xl border border-emerald-100/50 text-center font-bold text-xs">
+                                    Hot Ramen Served! ✅ Thank you!
+                                </div>
+                            `;
+                        }
+                    }
+
+                    return `
+                    <div class="bg-white rounded-3xl p-5 shadow-sm border border-orange-100 space-y-3">
+                        <div class="flex items-center justify-between border-b border-orange-50 pb-2">
+                            <div>
+                                <span class="text-[10px] uppercase font-bold text-gold-primary tracking-wider">Order ID: #${o.id.toString().slice(-4)}</span>
+                                <h4 class="text-sm font-bold text-dark-text mt-0.5">${o.branchName}</h4>
+                            </div>
+                            <div class="text-right">
+                                <span class="inline-block border rounded-full px-2.5 py-0.5 text-[9px] font-bold ${badgeClass}">
+                                    ${badgeLabel}
+                                </span>
+                                <p class="text-[9px] text-muted-slate mt-0.5">${dateStr}</p>
+                            </div>
+                        </div>
+
+                        <div class="text-xs text-dark-text space-y-1 bg-sand-bg p-3 rounded-2xl">
+                            <div><strong>Guest Name:</strong> ${o.customerName}</div>
+                            <div><strong>Phone Number:</strong> ${o.customerPhone}</div>
+                            <div><strong>Service Delivery Type:</strong> ${o.deliveryType}</div>
+                            <div class="border-t border-orange-100/50 pt-1.5 mt-1.5">
+                                <strong>Items:</strong> <span class="text-muted-slate italic">${o.orderItemsText}</span>
+                            </div>
+                            <div class="font-extrabold text-gold-primary-dark pt-1">Grand Total Amount: ₹${o.totalAmount.toFixed(2)}</div>
+                        </div>
+
+                        ${actionSection}
+                    </div>
+                    `;
+                }).join('');
+            }
+
+            // Render Bookings
+            if (state.bookings.length === 0) {
+                bookingsPanel.innerHTML = `
+                <div class="text-center py-12 bg-white rounded-3xl border border-orange-100">
+                    <p class="text-3xl">📅</p>
+                    <p class="text-sm font-bold text-dark-text mt-2">Zero Table Booking Proposals</p>
+                    <p class="text-xs text-slate-400 mt-1">Guest table booking requests will list here for staff confirmation.</p>
+                </div>
+                `;
+            } else {
+                bookingsPanel.innerHTML = state.bookings.map(b => {
+                    const isConfirmed = b.isConfirmed || false;
+                    const dateStr = new Date(b.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    const reqStr = b.specialRequests.trim() === "" ? "None" : b.specialRequests;
+                    
+                    let statusClass = isConfirmed ? 'bg-emerald-50 text-emerald-700 border-emerald-100/50' : 'bg-amber-50 text-amber-700 border-amber-200/50';
+                    let statusLabel = isConfirmed ? 'Confirmed ✅' : 'Needs Confirm ⏳';
+
+                    let actionSection = '';
+                    if (!isConfirmed) {
+                        actionSection = `
+                            <button onclick="confirmBookingFromStaff(${b.id})" class="w-full bg-gradient-to-r from-gold-primary to-amber-500 hover:from-gold-primary-dark hover:to-amber-600 text-white font-bold text-xs py-3 px-4 rounded-2xl shadow transition duration-200 flex items-center justify-center gap-1.5 hover:scale-[1.01]">
+                                💬 Confirm Reservation & Send Customer Confirmation
+                            </button>
+                        `;
+                    } else {
+                        actionSection = `
+                            <div class="bg-emerald-50 text-emerald-800 p-3 rounded-2xl border border-emerald-100/50 text-center font-bold text-xs">
+                                Table Booked. Notification transmitted to customer! ✅
+                            </div>
+                        `;
+                    }
+
+                    return `
+                    <div class="bg-white rounded-3xl p-5 shadow-sm border border-orange-100 space-y-3">
+                        <div class="flex items-center justify-between border-b border-orange-50 pb-2">
+                            <div>
+                                <span class="text-[10px] uppercase font-bold text-amber-600 tracking-wider">Booking ID: #${b.id.toString().slice(-4)}</span>
+                                <h4 class="text-sm font-bold text-dark-text mt-0.5">${b.branchName}</h4>
+                            </div>
+                            <div class="text-right">
+                                <span class="inline-block border rounded-full px-2.5 py-0.5 text-[9px] font-bold ${statusClass}">
+                                    ${statusLabel}
+                                </span>
+                                <p class="text-[9px] text-muted-slate mt-0.5">${dateStr}</p>
+                            </div>
+                        </div>
+
+                        <div class="text-xs text-dark-text space-y-1 bg-sand-bg p-3 rounded-2xl">
+                            <div><strong>Proposed Schedule:</strong> ${b.date} at ${b.time}</div>
+                            <div><strong>Total Size:</strong> ${b.guestsCount} Ninja Guests</div>
+                            <div><strong>Requested Table:</strong> ${b.tableName || 'N/A'} (ID: ${b.tableId || 'N/A'}, Max: ${b.tableSeats || 'N/A'} Pax)</div>
+                            <div><strong>Customer:</strong> ${b.customerName}</div>
+                            <div><strong>Customer Contact:</strong> ${b.customerPhone}</div>
+                            <div class="border-t border-orange-100/50 pt-1.5 mt-1.5">
+                                <strong>Requests:</strong> <span class="text-muted-slate italic">"${reqStr}"</span>
+                            </div>
+                        </div>
+
+                        ${actionSection}
+                    </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function confirmOrderFromStaff(orderId) {
+            const index = state.orders.findIndex(o => o.id === orderId);
+            if (index !== -1) {
+                const order = state.orders[index];
+                order.status = 'Preparing';
+                saveToLocalStorage();
+                
+                // Formulate target WhatsApp text
+                const text = `Konnichiwa ${order.customerName}! 🍜\n` +
+                             `Your order at *${order.branchName}* is officially *CONFIRMED* and has entered our busy ninja kitchen!\n` +
+                             `--------------------------------------\n` +
+                             `👤 *Customer*: ${order.customerName}\n` +
+                             `📞 *Contact*: ${order.customerPhone}\n` +
+                             `🚚 *Route*: ${order.deliveryType}\n` +
+                             `📝 *Items*: ${order.orderItemsText}\n` +
+                             `💰 *Paid Total*: ₹${order.totalAmount.toFixed(2)}\n` +
+                             `--------------------------------------\n` +
+                             `Our kitchen team is hand-rolling your noodles as we speak. We will notify you when it is ready! Arigato! 🍥`;
+                
+                const cleanPhone = order.customerPhone.replace("+", "").replace(/\s+/g, "").trim();
+                const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(text)}`;
+                
+                // Fire automatic WhatsApp
+                window.open(whatsappUrl, '_blank');
+                
+                // Redraw UI
+                updateUI();
+            }
+        }
+
+        function confirmBookingFromStaff(bookingId) {
+            const index = state.bookings.findIndex(b => b.id === bookingId);
+            if (index !== -1) {
+                const booking = state.bookings[index];
+                booking.isConfirmed = true;
+                saveToLocalStorage();
+                
+                // Formulate target WhatsApp text
+                const tblName = booking.tableName || 'N/A';
+                const tblId = booking.tableId || 'N/A';
+                const text = `Konnichiwa ${booking.customerName}! 📅\n` +
+                             `Your table reservation request at *${booking.branchName}* is officially *CONFIRMED*!\n` +
+                             `--------------------------------------\n` +
+                             `👤 *Customer*: ${booking.customerName}\n` +
+                             `👥 *Guests*: ${booking.guestsCount} Ninja Guests\n` +
+                             `📅 *Reserved Date*: ${booking.date}\n` +
+                             `🕒 *Time Slot*: ${booking.time}\n` +
+                             `🪑 *Assigned Table*: ${tblName} (ID: ${tblId})\n` +
+                             `💬 *Special Requests*: ${booking.specialRequests.trim() === "" ? "None" : booking.specialRequests}\n` +
+                             `--------------------------------------\n` +
+                             `We are looking forward to welcoming you into our warm sanctuary! See you soon! Arigato! 🍥`;
+                             
+                const cleanPhone = booking.customerPhone.replace("+", "").replace(/\s+/g, "").trim();
+                const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(text)}`;
+                
+                // Fire automatic WhatsApp
+                window.open(whatsappUrl, '_blank');
+                
+                // Redraw UI
+                updateUI();
+            }
+        }
+
+        function advanceOrderStatusFromStaff(orderId) {
+            const index = state.orders.findIndex(o => o.id === orderId);
+            if (index !== -1) {
+                const currentStatus = state.orders[index].status || 'Placed';
+                let nextStatus = currentStatus;
+                if (currentStatus === 'Placed') nextStatus = 'Preparing';
+                else if (currentStatus === 'Preparing') nextStatus = 'Ready';
+                else if (currentStatus === 'Ready') nextStatus = 'Served';
+                
+                state.orders[index].status = nextStatus;
+                saveToLocalStorage();
+                updateUI();
+            }
+        }
+
+        // Settings & Preferences Hub Operations
+        let voiceContext = null;
+        function playChimeSound(type = 'success') {
+            const soundEnabled = localStorage.getItem('settings-sound-enabled') !== 'false';
+            if (soundEnabled) {
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (!voiceContext) {
+                        voiceContext = new AudioContext();
+                    }
+                    const now = voiceContext.currentTime;
+                    if (type === 'success') {
+                        const osc1 = voiceContext.createOscillator();
+                        const osc2 = voiceContext.createOscillator();
+                        const gainNode = voiceContext.createGain();
+                        
+                        osc1.type = 'sine';
+                        osc1.frequency.setValueAtTime(523.25, now);
+                        osc1.frequency.exponentialRampToValueAtTime(783.99, now + 0.15);
+                        
+                        osc2.type = 'sine';
+                        osc2.frequency.setValueAtTime(659.25, now + 0.05);
+                        osc2.frequency.exponentialRampToValueAtTime(987.77, now + 0.25);
+
+                        gainNode.gain.setValueAtTime(0.08, now);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+                        osc1.connect(gainNode);
+                        osc2.connect(gainNode);
+                        gainNode.connect(voiceContext.destination);
+
+                        osc1.start(now);
+                        osc1.stop(now + 0.4);
+                        osc2.start(now + 0.05);
+                        osc2.stop(now + 0.41);
+                    } else if (type === 'click') {
+                        const osc = voiceContext.createOscillator();
+                        const gainNode = voiceContext.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(600, now);
+                        osc.frequency.exponentialRampToValueAtTime(200, now + 0.08);
+
+                        gainNode.gain.setValueAtTime(0.05, now);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+                        osc.connect(gainNode);
+                        gainNode.connect(voiceContext.destination);
+                        osc.start(now);
+                        osc.stop(now + 0.1);
+                    }
+                } catch(e) {
+                    console.warn("Chime AudioContext blocked or unsupported:", e);
+                }
+            }
+        }
+
+        function initSettings() {
+            const theme = localStorage.getItem('settings-theme') || 'orange';
+            const textSize = localStorage.getItem('settings-text-size') || 'medium';
+            const soundEnabled = localStorage.getItem('settings-sound-enabled') !== 'false';
+            const defaultGuests = localStorage.getItem('settings-default-guests') || '2';
+
+            // Apply theming
+            applyThemeColors(theme);
+            highlightActiveThemeButton(theme);
+
+            // Apply text scaling
+            applyTextSize(textSize);
+            highlightActiveTextSizeButton(textSize);
+
+            // Audio configuration UI
+            const soundToggle = document.getElementById('settings-sound-toggle');
+            if (soundToggle) {
+                soundToggle.checked = soundEnabled;
+            }
+
+            // Default guests configure selectors
+            const defaultGuestsSelect = document.getElementById('settings-default-guests');
+            if (defaultGuestsSelect) {
+                defaultGuestsSelect.value = defaultGuests;
+            }
+
+            const guestInput = document.getElementById('booking-guests');
+            if (guestInput) {
+                guestInput.value = defaultGuests;
+            }
+        }
+
+        function openSettingsModal() {
+            document.getElementById('modal-settings').classList.remove('hidden');
+            playChimeSound('click');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('modal-settings').classList.add('hidden');
+            playChimeSound('click');
+        }
+
+        function applyThemeColors(theme) {
+            const root = document.documentElement;
+            if (theme === 'orange') {
+                root.style.setProperty('--color-primary', '#E65100');
+                root.style.setProperty('--color-primary-light', '#FF8A50');
+                root.style.setProperty('--color-primary-dark', '#B22A00');
+            } else if (theme === 'blue') {
+                root.style.setProperty('--color-primary', '#3F51B5');
+                root.style.setProperty('--color-primary-light', '#757DE8');
+                root.style.setProperty('--color-primary-dark', '#002984');
+            } else if (theme === 'green') {
+                root.style.setProperty('--color-primary', '#2E7D32');
+                root.style.setProperty('--color-primary-light', '#60ad5e');
+                root.style.setProperty('--color-primary-dark', '#005005');
+            } else if (theme === 'gold') {
+                root.style.setProperty('--color-primary', '#FF8F00');
+                root.style.setProperty('--color-primary-light', '#ffc046');
+                root.style.setProperty('--color-primary-dark', '#c56000');
+            }
+        }
+
+        function highlightActiveThemeButton(theme) {
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.remove('border-gold-primary', 'bg-orange-100/50');
+                btn.classList.add('border-transparent');
+            });
+            const activeBtn = document.getElementById(`theme-btn-${theme}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('border-transparent');
+                activeBtn.classList.add('border-gold-primary', 'bg-orange-100/50');
+            }
+        }
+
+        function changeTheme(theme) {
+            localStorage.setItem('settings-theme', theme);
+            applyThemeColors(theme);
+            highlightActiveThemeButton(theme);
+            
+            // Re-highlight navigation icons dynamically
+            switchTab(state.currentTab);
+            playChimeSound('click');
+        }
+
+        function applyTextSize(size) {
+            const root = document.documentElement;
+            if (size === 'small') {
+                root.style.fontSize = '14px';
+            } else if (size === 'medium') {
+                root.style.fontSize = '16px';
+            } else if (size === 'large') {
+                root.style.fontSize = '18.5px';
+            }
+        }
+
+        function highlightActiveTextSizeButton(size) {
+            ['small', 'medium', 'large'].forEach(s => {
+                const btn = document.getElementById(`ts-btn-${s}`);
+                if (btn) {
+                    btn.className = "py-2 text-xs font-bold rounded-xl border border-gray-100 bg-white text-dark-text hover:bg-orange-50/50 transition";
+                }
+            });
+            const activeBtn = document.getElementById(`ts-btn-${size}`);
+            if (activeBtn) {
+                activeBtn.className = "py-2 text-xs font-extrabold rounded-xl border-2 border-gold-primary bg-orange-50 text-gold-primary transition";
+            }
+        }
+
+        function changeTextSize(size) {
+            localStorage.setItem('settings-text-size', size);
+            applyTextSize(size);
+            highlightActiveTextSizeButton(size);
+            playChimeSound('click');
+        }
+
+        function toggleSound(enabled) {
+            localStorage.setItem('settings-sound-enabled', enabled);
+            if (enabled) {
+                playChimeSound('success');
+            }
+        }
+
+        function changeDefaultGuests(val) {
+            localStorage.setItem('settings-default-guests', val);
+            const guestInput = document.getElementById('booking-guests');
+            if (guestInput) {
+                guestInput.value = val;
+                if (typeof renderFloorPlan === 'function') {
+                    renderFloorPlan();
+                }
+            }
+            playChimeSound('click');
         }
 
         // Vercel popup guide helper

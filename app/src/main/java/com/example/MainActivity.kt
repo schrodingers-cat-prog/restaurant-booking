@@ -17,7 +17,7 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
     setContent {
-      MyApplicationTheme {
+      MyApplicationTheme(viewModel = viewModel) {
         MainScaffold(viewModel = viewModel)
       }
     }

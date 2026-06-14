@@ -46,8 +46,13 @@ import com.example.ui.viewmodel.RestaurantViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
+import com.example.ui.theme.ThemeState
+
 // Style Tokens: Terracotta Warm Palette
-val GoldPrimary = Color(0xFFE65100)
+val GoldPrimary: Color
+    @Composable
+    get() = ThemeState.currentPrimaryColor
+
 val AmberSecondary = Color(0xFFFFB300)
 val SandBackground = Color(0xFFFCF9F2)
 val DarkText = Color(0xFF2E241E)
@@ -85,6 +90,7 @@ fun MainScaffold(viewModel: RestaurantViewModel) {
     var currentBranchDetail by remember { mutableStateOf<Branch?>(null) }
     var activeBookingBranch by remember { mutableStateOf<Branch?>(null) }
     var showCartDialog by remember { mutableStateOf(false) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
     var lastReceiptOrder by remember { mutableStateOf<Order?>(null) }
     var lastReceiptBooking by remember { mutableStateOf<Booking?>(null) }
 
@@ -156,31 +162,49 @@ fun MainScaffold(viewModel: RestaurantViewModel) {
                         )
                     }
 
-                    // Cart Icon Button showing quantity limit if any items exist
-                    val cartItemCount = cart.values.sum()
-                    if (cartItemCount > 0) {
+                    // Cart & Settings Header Actions Row
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val cartItemCount = cart.values.sum()
+                        if (cartItemCount > 0) {
+                            IconButton(
+                                onClick = { showCartDialog = true },
+                                modifier = Modifier
+                                    .background(Color.White.copy(alpha = 0.2f), CircleShape)
+                                    .testTag("toolbar_cart_button")
+                            ) {
+                                BadgedBox(
+                                    badge = {
+                                        Badge(
+                                            containerColor = AmberSecondary,
+                                            contentColor = DarkText
+                                        ) {
+                                            Text("$cartItemCount")
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ShoppingCart,
+                                        contentDescription = "Cart",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+                        }
+
                         IconButton(
-                            onClick = { showCartDialog = true },
+                            onClick = { showSettingsDialog = true },
                             modifier = Modifier
                                 .background(Color.White.copy(alpha = 0.2f), CircleShape)
-                                .testTag("toolbar_cart_button")
+                                .testTag("toolbar_settings_button")
                         ) {
-                            BadgedBox(
-                                badge = {
-                                    Badge(
-                                        containerColor = AmberSecondary,
-                                        contentColor = DarkText
-                                    ) {
-                                        Text("$cartItemCount")
-                                    }
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.ShoppingCart,
-                                    contentDescription = "Cart",
-                                    tint = Color.White
-                                )
-                            }
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings",
+                                tint = Color.White
+                            )
                         }
                     }
                 }
@@ -367,6 +391,7 @@ fun MainScaffold(viewModel: RestaurantViewModel) {
             onBookingConfirmed = { booking ->
                 activeBookingBranch = null
                 lastReceiptBooking = booking
+                playAndroidChime(viewModel, true)
                 // Automatically open WhatsApp with booking confirmation to customer
                 val text = viewModel.getWhatsAppTextForBooking(booking, booking.customerPhone)
                 launchWhatsApp(viewModel.getApplication(), text, booking.customerPhone)
@@ -382,6 +407,7 @@ fun MainScaffold(viewModel: RestaurantViewModel) {
             onOrderPlaced = { order ->
                 showCartDialog = false
                 lastReceiptOrder = order
+                playAndroidChime(viewModel, true)
                 // Trigger WhatsApp transition immediately!
                 val text = viewModel.getWhatsAppTextForOrder(order, order.customerPhone)
                 launchWhatsApp(viewModel.getApplication(), text, order.customerPhone)
@@ -414,6 +440,14 @@ fun MainScaffold(viewModel: RestaurantViewModel) {
                 launchWhatsApp(viewModel.getApplication(), text, order.customerPhone)
             },
             onDismiss = { lastReceiptOrder = null }
+        )
+    }
+
+    // 6. Preferences & Settings Configuration Dialog
+    if (showSettingsDialog) {
+        SettingsDialog(
+            viewModel = viewModel,
+            onDismiss = { showSettingsDialog = false }
         )
     }
 }
@@ -1861,12 +1895,55 @@ fun TableBookingDialog(
     onDismiss: () -> Unit,
     onBookingConfirmed: (Booking) -> Unit
 ) {
+    val defaultPartySize by viewModel.defaultPartySize.collectAsState()
     var customerName by remember { mutableStateOf("") }
     var customerPhone by remember { mutableStateOf("") }
-    var guestsNum by remember { mutableStateOf("2") }
+    var guestsNum by remember(defaultPartySize) { mutableStateOf(defaultPartySize.toString()) }
     var reqDate by remember { mutableStateOf("") }
     var reqTime by remember { mutableStateOf("") }
     var specialReq by remember { mutableStateOf("") }
+
+    // Native Branch Table seating layout configs
+    val (branchTables, branchThemedTitle) = remember(branch.id) {
+        when (branch.id) {
+            1 -> Pair(
+                listOf(
+                    Triple("T1", "Hokage Table 1", 6),
+                    Triple("T2", "Team 7 Table 2", 4),
+                    Triple("T3", "Academy Counter 3", 2),
+                    Triple("T4", "Uchiha Booth 4", 4),
+                    Triple("T5", "Hyuga Garden 5", 8),
+                    Triple("T6", "Ichiraku Bar 6", 2),
+                    Triple("T7", "Ichiraku Bar 7", 2)
+                ),
+                "🍁 Traditional Ramen Sanctuary Floor"
+            )
+            2 -> Pair(
+                listOf(
+                    Triple("S1", "Oasis Pavilion S1", 8),
+                    Triple("S2", "Kazekage Canopy S2", 2),
+                    Triple("S3", "Desert Rose S3", 4),
+                    Triple("S4", "Sandstorm Lounge S4", 6),
+                    Triple("S5", "Sun-Patio S5", 4)
+                ),
+                "🌵 Cozy Sandstorm Wind Shelter"
+            )
+            else -> Pair(
+                listOf(
+                    Triple("M1", "Water Cabin M1", 2),
+                    Triple("M2", "Deep Steam M2", 4),
+                    Triple("M3", "Water's Edge M3", 6),
+                    Triple("M4", "Plump Prawn M4", 4),
+                    Triple("M5", "Lake Pavilion M5", 12)
+                ),
+                "🌊 Waterfront Mist Floating Docks"
+            )
+        }
+    }
+
+    var selectedTableId by remember { mutableStateOf("") }
+    var selectedTableName by remember { mutableStateOf("") }
+    var selectedTableSeats by remember { mutableStateOf<Int?>(null) }
 
     // Use current date as placeholder
     LaunchedEffect(Unit) {
@@ -1940,7 +2017,7 @@ fun TableBookingDialog(
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             OutlinedTextField(
                                 value = reqDate,
-                                onValueChange = { reqDate = it },
+                                    onValueChange = { reqDate = it },
                                 label = { Text("Reservation Date") },
                                 placeholder = { Text("DD/MM/YYYY") },
                                 singleLine = true,
@@ -1994,6 +2071,103 @@ fun TableBookingDialog(
                         }
                     }
 
+                    // Native bird's-eye view table list choosing widget
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(SandBackground.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+                                .border(1.dp, SandBackground, RoundedCornerShape(14.dp))
+                                .padding(12.dp)
+                        ) {
+                            Text(
+                                text = "Select Table (${branchThemedTitle})",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = DarkText
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            // Interactive Horizontal table choosing row
+                            androidx.compose.foundation.lazy.LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                items(branchTables.size) { idx ->
+                                    val (tid, tname, seats) = branchTables[idx]
+                                    val isCurrentlySelected = selectedTableId == tid
+                                    val tooManyGuests = (guestsNum.toIntOrNull() ?: 2) > seats
+
+                                    Card(
+                                        onClick = {
+                                            selectedTableId = tid
+                                            selectedTableName = tname
+                                            selectedTableSeats = seats
+                                        },
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = if (isCurrentlySelected) GoldPrimary else Color.White
+                                        ),
+                                        shape = RoundedCornerShape(10.dp),
+                                        border = BorderStroke(
+                                            1.dp,
+                                            if (isCurrentlySelected) GoldPrimary.copy(alpha = 0.2f) else MutedSlate.copy(alpha = 0.2f)
+                                        ),
+                                        modifier = Modifier.height(54.dp)
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.Center
+                                        ) {
+                                            Text(
+                                                text = tid,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Black,
+                                                color = if (isCurrentlySelected) Color.White else DarkText
+                                            )
+                                            Text(
+                                                text = "Max $seats Pax",
+                                                fontSize = 8.sp,
+                                                color = if (isCurrentlySelected) Color.White.copy(alpha = 0.8f) else if (tooManyGuests) Color.Red else MutedSlate
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (selectedTableId.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "Selected: $selectedTableName (Max: $selectedTableSeats guests)",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = GoldPrimary,
+                                    modifier = Modifier.align(Alignment.End)
+                                )
+
+                                val guests = guestsNum.toIntOrNull() ?: 2
+                                selectedTableSeats?.let { max ->
+                                    if (guests > max) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "⚠️ Warning: Selected guests ($guests) exceeds table limit ($max)!",
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.Red
+                                        )
+                                    }
+                                }
+                            } else {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Please touch a table chip to allocate your seat.",
+                                    fontSize = 9.sp,
+                                    color = MutedSlate
+                                )
+                            }
+                        }
+                    }
+
                     item {
                         OutlinedTextField(
                             value = specialReq,
@@ -2015,7 +2189,17 @@ fun TableBookingDialog(
                             Toast.makeText(viewModel.getApplication(), "Please configure details to place booking.", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
+                        if (selectedTableId.isEmpty()) {
+                            Toast.makeText(viewModel.getApplication(), "Please select a specific table for fine-dining on the seat chips.", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
                         val guests = guestsNum.toIntOrNull() ?: 2
+                        selectedTableSeats?.let { maxSeats ->
+                            if (guests > maxSeats) {
+                                Toast.makeText(viewModel.getApplication(), "$selectedTableName only accommodates up to $maxSeats guests.", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
+                        }
                         viewModel.makeBooking(
                             branchId = branch.id,
                             branchName = branch.name,
@@ -2025,6 +2209,9 @@ fun TableBookingDialog(
                             time = reqTime.trim(),
                             guests = guests,
                             specialRequests = specialReq.trim(),
+                            tableId = selectedTableId,
+                            tableName = selectedTableName,
+                            tableSeats = selectedTableSeats,
                             onSuccess = { booking ->
                                 onBookingConfirmed(booking)
                             }
@@ -2309,4 +2496,288 @@ fun ReceiptPopup(
         shape = RoundedCornerShape(24.dp),
         containerColor = Color.White
     )
+}
+
+// --- Dynamic Preferences, Themes & Options Dialog ---
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsDialog(
+    viewModel: RestaurantViewModel,
+    onDismiss: () -> Unit
+) {
+    val currentTheme by viewModel.currentTheme.collectAsState()
+    val currentTextSize by viewModel.currentTextSize.collectAsState()
+    val soundFXEnabled by viewModel.soundFXEnabled.collectAsState()
+    val defaultPartySize by viewModel.defaultPartySize.collectAsState()
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .border(1.dp, GoldPrimary.copy(alpha = 0.15f), RoundedCornerShape(28.dp)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+            ) {
+                // Header section
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Preferences Hub ⚙️",
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 18.sp,
+                            color = DarkText
+                        )
+                        Text(
+                            text = "Customize Ichiraku Client Experience",
+                            fontSize = 11.sp,
+                            color = MutedSlate,
+                            fontWeight = FontWeight.Light,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            playAndroidChime(viewModel, false)
+                            onDismiss()
+                        }
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = MutedSlate)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // Section 1: Color Themes Selection
+                Text(
+                    text = "SELECT APP THEME",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Black,
+                    color = MutedSlate,
+                    modifier = Modifier.padding(bottom = 6.dp)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val themesList = listOf(
+                        "Orange" to Color(0xFFE65100),
+                        "Blue" to Color(0xFF3F51B5),
+                        "Green" to Color(0xFF2E7D32),
+                        "Gold" to Color(0xFFFF8F00)
+                    )
+
+                    themesList.forEach { (name, color) ->
+                        val isSelected = currentTheme == name
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (isSelected) color.copy(alpha = 0.15f) else Color(0xFFF9F9F9))
+                                .border(
+                                    width = if (isSelected) 2.dp else 1.dp,
+                                    color = if (isSelected) color else Color(0xFFE5E5E5),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .clickable {
+                                    viewModel.updateTheme(name)
+                                    playAndroidChime(viewModel, false)
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .background(color, CircleShape)
+                                        .border(2.dp, Color.White, CircleShape)
+                                )
+                                Text(
+                                    text = name,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = DarkText,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Section 2: Text Readability Font Size Scaler
+                Text(
+                    text = "ADJUST TEXT SIZE",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Black,
+                    color = MutedSlate,
+                    modifier = Modifier.padding(bottom = 6.dp)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val sizeOptions = listOf("Small", "Medium", "Large")
+                    sizeOptions.forEach { opt ->
+                        val isSelected = currentTextSize == opt
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(38.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (isSelected) GoldPrimary.copy(alpha = 0.15f) else Color(0xFFF9F9F9))
+                                .border(
+                                    width = if (isSelected) 1.5.dp else 1.dp,
+                                    color = if (isSelected) GoldPrimary else Color(0xFFE5E5E5),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .clickable {
+                                    viewModel.updateTextSize(opt)
+                                    playAndroidChime(viewModel, false)
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = opt,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Normal,
+                                color = if (isSelected) GoldPrimary else DarkText
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Section 3: Sound alerts toggle
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1.0f).padding(end = 8.dp)) {
+                        Text(
+                            text = "SOUND FEEDBACK CHIMES",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Black,
+                            color = MutedSlate
+                        )
+                        Text(
+                            text = "Synthesize audio waves on reservation triggers",
+                            fontSize = 9.sp,
+                            color = MutedSlate.copy(alpha = 0.8f),
+                            lineHeight = 12.sp
+                        )
+                    }
+                    Switch(
+                        checked = soundFXEnabled,
+                        onCheckedChange = {
+                            viewModel.updateSoundFXEnabled(it)
+                            if (it) playAndroidChime(viewModel, true)
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = GoldPrimary
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Section 4: Preset Default Party Guests Selector
+                Text(
+                    text = "DEFAULT PARTY GUESTS",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Black,
+                    color = MutedSlate,
+                    modifier = Modifier.padding(bottom = 6.dp)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val guestsList = listOf(1, 2, 4, 6)
+                    guestsList.forEach { count ->
+                        val isSelected = defaultPartySize == count
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(38.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (isSelected) GoldPrimary.copy(alpha = 0.15f) else Color(0xFFF9F9F9))
+                                .border(
+                                    width = if (isSelected) 1.5.dp else 1.dp,
+                                    color = if (isSelected) GoldPrimary else Color(0xFFE5E5E5),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .clickable {
+                                    viewModel.updateDefaultPartySize(count)
+                                    playAndroidChime(viewModel, false)
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = if (count == 6) "6 Squad" else "$count Guest",
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Normal,
+                                color = if (isSelected) GoldPrimary else DarkText
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Action confirmation save button
+                Button(
+                    onClick = {
+                        playAndroidChime(viewModel, true)
+                        onDismiss()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = GoldPrimary),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Apply & Return",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        color = Color.White,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+// Native audio synthesizer for client chimes
+fun playAndroidChime(viewModel: RestaurantViewModel, isSuccess: Boolean) {
+    if (viewModel.soundFXEnabled.value) {
+        try {
+            val toneG = android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 65)
+            if (isSuccess) {
+                toneG.startTone(android.media.ToneGenerator.TONE_CDMA_PIP, 120)
+            } else {
+                toneG.startTone(android.media.ToneGenerator.TONE_PROP_BEEP, 80)
+            }
+        } catch (e: Exception) {
+            // safe catch
+        }
+    }
 }
