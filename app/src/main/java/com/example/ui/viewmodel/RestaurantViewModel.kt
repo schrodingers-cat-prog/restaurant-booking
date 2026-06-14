@@ -194,8 +194,8 @@ class RestaurantViewModel(application: Application) : AndroidViewModel(applicati
 
     // Generating formatted WhatsApp texts
     fun getWhatsAppTextForOrder(order: Order, phoneToContact: String): String {
-        return "Konnichiwa Ichiraku Ramen! 🍜\n" +
-                "I would like to place an order at *${order.branchName}*:\n" +
+        return "Konnichiwa ${order.customerName}! 🍜\n" +
+                "Your order at *${order.branchName}* is *CONFIRMED* and we are preparing your meal!\n" +
                 "--------------------------------------\n" +
                 "👤 *Name*: ${order.customerName}\n" +
                 "📞 *Contact*: ${order.customerPhone}\n" +
@@ -204,22 +204,22 @@ class RestaurantViewModel(application: Application) : AndroidViewModel(applicati
                 "📝 *Items Ordered*:\n" +
                 order.orderItemsText.split(", ").joinToString("\n") { "• $it" } + "\n" +
                 "--------------------------------------\n" +
-                "💰 *Grand Total*: ₹${String.format(Locale.US, "%.2f", order.totalAmount)}\n\n" +
-                "Please verify my order details. Thank you!"
+                "💰 *Paid Total*: ₹${String.format(Locale.US, "%.2f", order.totalAmount)}\n\n" +
+                "Your delicious ramen is on its way / ready for pickup. Thank you!"
     }
 
     fun getWhatsAppTextForBooking(booking: Booking, phoneToContact: String): String {
         val requestsText = if (booking.specialRequests.trim().isEmpty()) "None" else booking.specialRequests
-        return "Konnichiwa Ichiraku Ramen! 📅\n" +
-                "I would like to reserve a table at *${booking.branchName}*:\n" +
+        return "Konnichiwa ${booking.customerName}! 📅\n" +
+                "Your table reservation request at *${booking.branchName}* is *CONFIRMED*!\n" +
                 "--------------------------------------\n" +
                 "👤 *Name*: ${booking.customerName}\n" +
                 "📞 *Contact*: ${booking.customerPhone}\n" +
-                "👥 *Guests Count*: ${booking.guestsCount} Persons\n" +
-                "📅 *Reservation Date*: ${booking.date}\n" +
-                "🕒 *Time Slot*: ${booking.time}\n" +
+                "👥 *Guests*: ${booking.guestsCount} Persons\n" +
+                "📅 *Date*: ${booking.date}\n" +
+                "🕒 *Time*: ${booking.time}\n" +
                 "💬 *Special Request*: $requestsText\n" +
                 "--------------------------------------\n\n" +
-                "Please confirm this table booking at your earliest. Thank you!"
+                "We look forward to serving your hot broth! Thank you for choosing Ichiraku Ramen!"
     }
 }

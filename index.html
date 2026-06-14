@@ -1355,26 +1355,25 @@
         function triggerReceiptWhatsApp() {
             if (!activeReceiptData) return;
             
-            const currentBranch = SEEDED_BRANCHES.find(b => b.id === activeReceiptData.branchId) || SEEDED_BRANCHES[0];
-            const phone = currentBranch.phone;
+            const phone = activeReceiptData.customerPhone;
 
             let text = "";
             if (activeReceiptType === 'booking') {
                 const reqText = activeReceiptData.specialRequests.trim() === "" ? "None" : activeReceiptData.specialRequests;
-                text = "Konnichiwa Ichiraku Ramen! 📅\n" +
-                       `I would like to reserve a table at *${activeReceiptData.branchName}*:\n` +
+                text = `Konnichiwa ${activeReceiptData.customerName}! 📅\n` +
+                       `Your table reservation request at *${activeReceiptData.branchName}* is *CONFIRMED*!\n` +
                        "--------------------------------------\n" +
                        `👤 *Name*: ${activeReceiptData.customerName}\n` +
                        `📞 *Contact*: ${activeReceiptData.customerPhone}\n` +
-                       `👥 *Guests Count*: ${activeReceiptData.guestsCount} Persons\n` +
-                       `📅 *Reservation Date*: ${activeReceiptData.date}\n` +
-                       `🕒 *Time Slot*: ${activeReceiptData.time}\n` +
+                       `👥 *Guests*: ${activeReceiptData.guestsCount} Persons\n` +
+                       `📅 *Date*: ${activeReceiptData.date}\n` +
+                       `🕒 *Time*: ${activeReceiptData.time}\n` +
                        `💬 *Special Request*: ${reqText}\n` +
                        "--------------------------------------\n\n" +
-                       "Please confirm this table booking at your earliest. Thank you!";
+                       "We look forward to serving your hot broth! Thank you for choosing Ichiraku Ramen!";
             } else {
-                text = "Konnichiwa Ichiraku Ramen! 🍜\n" +
-                       `I would like to place an order at *${activeReceiptData.branchName}*:\n` +
+                text = `Konnichiwa ${activeReceiptData.customerName}! 🍜\n` +
+                       `Your order at *${activeReceiptData.branchName}* is *CONFIRMED* and we are preparing your meal!\n` +
                        "--------------------------------------\n" +
                        `👤 *Name*: ${activeReceiptData.customerName}\n` +
                        `📞 *Contact*: ${activeReceiptData.customerPhone}\n` +
@@ -1383,8 +1382,8 @@
                        "📝 *Items Ordered*:\n" +
                        activeReceiptData.orderItemsText.split(", ").map(it => `• ${it}`).join("\n") + "\n" +
                        "--------------------------------------\n" +
-                       `💰 *Grand Total*: ₹${activeReceiptData.totalAmount.toFixed(2)}\n\n` +
-                       "Please verify my order details. Thank you!";
+                       `💰 *Paid Total*: ₹${activeReceiptData.totalAmount.toFixed(2)}\n\n` +
+                       "Your delicious ramen is on its way / ready for pickup. Thank you!";
             }
 
             const cleanPhone = phone.replace("+", "").replace(/\s+/g, "").trim();

@@ -279,13 +279,13 @@ fun MainScaffold(viewModel: RestaurantViewModel) {
                         viewModel = viewModel,
                         onResendOrderWhatsApp = { order ->
                             viewModel.selectBranch(order.branchId)
-                            val phone = branches.find { it.id == order.branchId }?.phone ?: "+91 78900 20002"
+                            val phone = order.customerPhone.ifEmpty { "+91 78900 20002" }
                             val text = viewModel.getWhatsAppTextForOrder(order, phone)
                             launchWhatsApp(viewModel.getApplication(), text, phone)
                         },
                         onResendBookingWhatsApp = { booking ->
                             viewModel.selectBranch(booking.branchId)
-                            val phone = branches.find { it.id == booking.branchId }?.phone ?: "+91 78900 20002"
+                            val phone = booking.customerPhone.ifEmpty { "+91 78900 20002" }
                             val text = viewModel.getWhatsAppTextForBooking(booking, phone)
                             launchWhatsApp(viewModel.getApplication(), text, phone)
                         }
@@ -367,9 +367,9 @@ fun MainScaffold(viewModel: RestaurantViewModel) {
             onBookingConfirmed = { booking ->
                 activeBookingBranch = null
                 lastReceiptBooking = booking
-                // Automatically open WhatsApp with booking proposal
-                val text = viewModel.getWhatsAppTextForBooking(booking, branch.phone)
-                launchWhatsApp(viewModel.getApplication(), text, branch.phone)
+                // Automatically open WhatsApp with booking confirmation to customer
+                val text = viewModel.getWhatsAppTextForBooking(booking, booking.customerPhone)
+                launchWhatsApp(viewModel.getApplication(), text, booking.customerPhone)
             }
         )
     }
@@ -383,9 +383,8 @@ fun MainScaffold(viewModel: RestaurantViewModel) {
                 showCartDialog = false
                 lastReceiptOrder = order
                 // Trigger WhatsApp transition immediately!
-                val branchPhone = branches.find { it.id == order.branchId }?.phone ?: "+91 78900 20002"
-                val text = viewModel.getWhatsAppTextForOrder(order, branchPhone)
-                launchWhatsApp(viewModel.getApplication(), text, branchPhone)
+                val text = viewModel.getWhatsAppTextForOrder(order, order.customerPhone)
+                launchWhatsApp(viewModel.getApplication(), text, order.customerPhone)
             }
         )
     }
@@ -393,13 +392,12 @@ fun MainScaffold(viewModel: RestaurantViewModel) {
     // 4. Booking Receipt Popup Dialog
     lastReceiptBooking?.let { booking ->
         ReceiptPopup(
-            title = "Table Reservation Sent!",
-            message = "Your booking request is created. A message is prepared for WhatsApp transmission to ${booking.branchName} for live confirmation.",
-            actionText = "Send on WhatsApp Again",
+            title = "Reservation Confirmed! 📅",
+            message = "Your table reservation is confirmed. A message has been prepared for WhatsApp confirmation to your number: ${booking.customerPhone}.",
+            actionText = "Send Confirmation on WhatsApp Again",
             onAction = {
                 val text = viewModel.getWhatsAppTextForBooking(booking, booking.customerPhone)
-                val branchPhone = branches.find { it.id == booking.branchId }?.phone ?: "+91 78900 20002"
-                launchWhatsApp(viewModel.getApplication(), text, branchPhone)
+                launchWhatsApp(viewModel.getApplication(), text, booking.customerPhone)
             },
             onDismiss = { lastReceiptBooking = null }
         )
@@ -408,13 +406,12 @@ fun MainScaffold(viewModel: RestaurantViewModel) {
     // 5. Order Receipt Popup Dialog
     lastReceiptOrder?.let { order ->
         ReceiptPopup(
-            title = "Order Transmitted!",
-            message = "Tasty food is cooking! Your order at ${order.branchName} is registered. A details invoice has been prepared for WhatsApp dispatcher to finalize dispatch details.",
+            title = "Order Confirmed! 🍜",
+            message = "Tasty food is cooking! Your order at ${order.branchName} is confirmed. A confirmation receipt has been prepared for WhatsApp to your number: ${order.customerPhone}.",
             actionText = "Send Invoice on WhatsApp",
             onAction = {
                 val text = viewModel.getWhatsAppTextForOrder(order, order.customerPhone)
-                val branchPhone = branches.find { it.id == order.branchId }?.phone ?: "+91 78900 20002"
-                launchWhatsApp(viewModel.getApplication(), text, branchPhone)
+                launchWhatsApp(viewModel.getApplication(), text, order.customerPhone)
             },
             onDismiss = { lastReceiptOrder = null }
         )
