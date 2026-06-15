@@ -1123,12 +1123,17 @@
                         </p>
 
                         <!-- Actions Grid -->
-                        <div class="grid grid-cols-2 gap-2 pt-2">
-                            <button onclick="openBranchDetailModal(${branch.id})" class="text-xs text-gold-primary border border-orange-100 hover:bg-orange-50 font-bold py-2.5 px-3 rounded-2xl transition flex items-center justify-center gap-1">
-                                Info & Reviews (${branchReviews.length})
-                            </button>
-                            <button onclick="routeBranchToOrder(${branch.id})" class="text-xs text-white bg-gold-primary hover:bg-gold-primary-dark font-bold py-2.5 px-3 rounded-2xl shadow transition flex items-center justify-center gap-1">
-                                Order Food Online
+                        <div class="flex flex-col gap-2 pt-2">
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="openBranchDetailModal(${branch.id})" class="text-xs text-dark-text border border-orange-200 bg-white hover:bg-orange-50 font-bold py-2 px-1.5 rounded-2xl transition flex items-center justify-center gap-1">
+                                    💬 Reviews
+                                </button>
+                                <button onclick="openBookingModal(${branch.id})" class="text-xs text-gold-primary border border-gold-primary/30 bg-white hover:bg-orange-50 font-bold py-2 px-1.5 rounded-2xl transition flex items-center justify-center gap-1">
+                                    📅 Book Table
+                                </button>
+                            </div>
+                            <button onclick="routeBranchToOrder(${branch.id})" class="text-xs text-white bg-gold-primary hover:bg-gold-primary-dark font-bold py-2.5 px-3 rounded-2xl shadow transition flex items-center justify-center gap-1.5 w-full">
+                                🍜 Order Food Online
                             </button>
                         </div>
                     </div>
