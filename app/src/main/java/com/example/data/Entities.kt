@@ -57,7 +57,9 @@ data class Order(
     val totalAmount: Double,
     val timestamp: Long = System.currentTimeMillis(),
     val deliveryType: String, // "Dine-In", "Takeaway", "Delivery"
-    val status: String = "Placed"
+    val status: String = "Placed",
+    val paymentMethod: String = "COD", // "COD" or "Online"
+    val paymentStatus: String = "Unpaid" // "Unpaid" or "Paid"
 ) : Serializable
 
 @Entity(tableName = "reviews")

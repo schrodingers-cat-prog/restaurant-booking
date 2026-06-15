@@ -88,6 +88,12 @@ fun MainScaffold(viewModel: RestaurantViewModel) {
     val branches by viewModel.branches.collectAsState()
     val cart by viewModel.cart.collectAsState()
     val isReady by viewModel.uiStateReady.collectAsState()
+    val bookings by viewModel.bookings.collectAsState()
+    val dismissedBookings by viewModel.dismissedBookings.collectAsState()
+
+    val activeReminders = bookings.filter { booking ->
+        booking.id !in dismissedBookings && viewModel.isBookingWithin24Hours(booking)
+    }
 
     var activeTab by remember { mutableStateOf(0) } // 0 = Branches, 1 = Menu/Ordering, 2 = Orders & Reservations
     var currentBranchDetail by remember { mutableStateOf<Branch?>(null) }
@@ -280,14 +286,111 @@ fun MainScaffold(viewModel: RestaurantViewModel) {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Screen Dispatcher based on chosen bottom navigation tab
-            AnimatedContent(
-                targetState = activeTab,
-                transitionSpec = {
-                    fadeIn(animationSpec = spring()) togetherWith fadeOut(animationSpec = spring())
-                },
-                label = "tab_fade"
-            ) { targetTab ->
+            Column(modifier = Modifier.fillMaxSize()) {
+                // RENDER REMINDER IN CONCISE AND POLISHED DECORATED BLOCKS
+                if (activeReminders.isNotEmpty()) {
+                    activeReminders.forEach { booking ->
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFBEB)),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .border(1.5.dp, GoldPrimary.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                                .testTag("reservation_reminder_card_${booking.id}")
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .background(GoldPrimary.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text("🔔", fontSize = 16.sp)
+                                    }
+                                    Column {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Text(
+                                                text = "Reservation Alert: ${booking.tableName ?: "Table Booking"}",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp,
+                                                color = GoldPrimary
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .background(GoldPrimary.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
+                                                    .padding(horizontal = 4.dp, vertical = 1.dp)
+                                            ) {
+                                                Text(
+                                                    "Within 24h",
+                                                    fontSize = 8.sp,
+                                                    fontWeight = FontWeight.Black,
+                                                    color = GoldPrimary
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = "Honorable ${booking.customerName}, your seat at ${booking.branchName} is reserved on ${booking.date} at ${booking.time}.",
+                                            fontSize = 10.sp,
+                                            color = DarkText,
+                                            lineHeight = 13.sp
+                                        )
+                                    }
+                                }
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Button(
+                                        onClick = { activeTab = 2 },
+                                        colors = ButtonDefaults.buttonColors(containerColor = GoldPrimary),
+                                        shape = RoundedCornerShape(8.dp),
+                                        modifier = Modifier.height(28.dp),
+                                        contentPadding = PaddingValues(horizontal = 8.dp)
+                                    ) {
+                                        Text("View", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                    }
+                                    IconButton(
+                                        onClick = { viewModel.dismissBookingReminder(booking.id) },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            contentDescription = "Dismiss",
+                                            tint = Color.Gray,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Box(modifier = Modifier.weight(1f)) {
+                    // Screen Dispatcher based on chosen bottom navigation tab
+                    AnimatedContent(
+                        targetState = activeTab,
+                        transitionSpec = {
+                            fadeIn(animationSpec = spring()) togetherWith fadeOut(animationSpec = spring())
+                        },
+                        label = "tab_fade"
+                    ) { targetTab ->
                 when (targetTab) {
                     0 -> BranchesScreen(
                         viewModel = viewModel,
@@ -318,6 +421,8 @@ fun MainScaffold(viewModel: RestaurantViewModel) {
                         }
                     )
                 }
+            }
+            }
             }
 
             // Cart Alert Strip overlay on order screen
@@ -1190,7 +1295,10 @@ fun HistoryScreen(
                         OrderHistoryCard(
                             order = order,
                             onNotifyWhatsApp = { onResendOrderWhatsApp(order) },
-                            onAdvanceStatus = { viewModel.advanceOrderStatus(order) }
+                            onAdvanceStatus = { viewModel.advanceOrderStatus(order) },
+                            onUpdatePayment = { method, status ->
+                                viewModel.updateOrderPayment(order, method, status)
+                            }
                         )
                     }
                 }
@@ -1307,7 +1415,8 @@ fun StatusDotLabel(label: String, isActiveOrDone: Boolean, isCurrent: Boolean) {
 fun OrderHistoryCard(
     order: Order,
     onNotifyWhatsApp: () -> Unit,
-    onAdvanceStatus: () -> Unit
+    onAdvanceStatus: () -> Unit,
+    onUpdatePayment: (String, String) -> Unit
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = CardBackground),
@@ -1393,6 +1502,164 @@ fun OrderHistoryCard(
                 fontSize = 12.sp,
                 lineHeight = 16.sp
             )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Payment Suite for Android Order card
+            var showPaymentDialog by remember { mutableStateOf(false) }
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = GoldPrimary.copy(alpha = 0.04f)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().border(0.5.dp, GoldPrimary.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Payment Option:",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.sp,
+                            color = MutedSlate
+                        )
+                        val isPaid = order.paymentStatus == "Paid"
+                        val payLabel = if (isPaid) "Paid Online ✅" else (if (order.paymentMethod == "Online") "Online - Pending 💳" else "COD - Unpaid 💵")
+                        val payBg = if (isPaid) Color(0xFFE8F5E9) else Color(0xFFFFF3E0)
+                        val payTc = if (isPaid) Color(0xFF388E3C) else Color(0xFFE65100)
+                        Box(
+                            modifier = Modifier
+                                .background(payBg, RoundedCornerShape(6.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(payLabel, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = payTc)
+                        }
+                    }
+
+                    if (order.paymentStatus != "Paid") {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Modify Route:", fontSize = 9.sp, color = MutedSlate, fontWeight = FontWeight.SemiBold)
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                val isCOD = order.paymentMethod == "COD"
+                                Button(
+                                    onClick = { onUpdatePayment("COD", "Unpaid") },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (isCOD) GoldPrimary else SandBackground,
+                                        contentColor = if (isCOD) Color.White else DarkText
+                                    ),
+                                    shape = RoundedCornerShape(6.dp),
+                                    modifier = Modifier.height(24.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                                ) {
+                                    Text("💵 COD", fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                }
+                                Button(
+                                    onClick = { onUpdatePayment("Online", "Unpaid") },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (!isCOD) GoldPrimary else SandBackground,
+                                        contentColor = if (!isCOD) Color.White else DarkText
+                                    ),
+                                    shape = RoundedCornerShape(6.dp),
+                                    modifier = Modifier.height(24.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                                ) {
+                                    Text("💳 Online", fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Button(
+                            onClick = { showPaymentDialog = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = GoldPrimary),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth().height(32.dp),
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Text("⚡ Secure Online Checkout", fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Color.White)
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFFE8F5E9), RoundedCornerShape(8.dp))
+                                .padding(vertical = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("🎉 Order Paid! Enjoy your warm meal.", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF388E3C))
+                        }
+                    }
+                }
+            }
+
+            // SIMULATED SECURE KOTLIN ONLINE PAY DIALOG
+            if (showPaymentDialog) {
+                Dialog(onDismissRequest = { showPaymentDialog = false }) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = SandBackground),
+                        shape = RoundedCornerShape(24.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .background(Color.White)
+                                .padding(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("Ichiraku Secure Pay 🔐", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = DarkText)
+                            Text("Verified Sandbox Transaction Suite", fontSize = 10.sp, color = MutedSlate)
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(GoldPrimary.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
+                                    .padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text("Amount Due to Pay", fontSize = 11.sp, color = MutedSlate, fontWeight = FontWeight.SemiBold)
+                                Text("₹${String.format(Locale.US, "%.2f", order.totalAmount)}", fontSize = 24.sp, fontWeight = FontWeight.Black, color = GoldPrimary)
+                            }
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            Text("Scan QR Code or fill fake details to simulate UPI/Card payment", fontSize = 10.sp, color = MutedSlate, textAlign = TextAlign.Center)
+                            
+                            Spacer(modifier = Modifier.height(12.dp))
+                            
+                            Button(
+                                onClick = {
+                                    onUpdatePayment("Online", "Paid")
+                                    showPaymentDialog = false
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = GoldPrimary),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth().height(44.dp)
+                            ) {
+                                Text("🔒 Settle Complete Now", fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+                            
+                            Spacer(modifier = Modifier.height(6.dp))
+                            
+                            TextButton(onClick = { showPaymentDialog = false }) {
+                                Text("Cancel Payment", color = Color.Gray, fontSize = 12.sp)
+                            }
+                        }
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -2254,6 +2521,7 @@ fun CartCheckoutDialog(
     var customerName by remember { mutableStateOf("") }
     var customerPhone by remember { mutableStateOf("") }
     var deliveryType by remember { mutableStateOf("Dine-In") } // Dine-In, Takeaway, Delivery
+    var paymentMethod by remember { mutableStateOf("COD") } // COD, Online
 
     val totalPrice = cart.entries.sumOf { it.key.price * it.value }
     val taxPrice = totalPrice * 0.05 // 5% service tax
@@ -2382,6 +2650,37 @@ fun CartCheckoutDialog(
                     }
 
                     item {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        // Segmented Payment Method Choices
+                        Text("Choose Payment Method:", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = DarkText)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(SandBackground, RoundedCornerShape(10.dp))
+                                .padding(4.dp)
+                        ) {
+                            listOf("COD", "Online").forEach { method ->
+                                val isSelected = paymentMethod == method
+                                Button(
+                                    onClick = { paymentMethod = method },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (isSelected) GoldPrimary else Color.Transparent,
+                                        contentColor = if (isSelected) Color.White else DarkText
+                                    ),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(34.dp),
+                                    contentPadding = PaddingValues(0.dp)
+                                ) {
+                                    val disp = if (method == "COD") "💵 COD" else "💳 Online"
+                                    Text(disp, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                }
+                            }
+                        }
+                    }
+
+                    item {
                         Divider(modifier = Modifier.padding(vertical = 10.dp), color = SandBackground, thickness = 1.dp)
                     }
 
@@ -2425,6 +2724,7 @@ fun CartCheckoutDialog(
                             customerName = customerName.trim(),
                             customerPhone = customerPhone.trim(),
                             deliveryType = deliveryType,
+                            paymentMethod = paymentMethod,
                             onComplete = { order ->
                                 onOrderPlaced(order)
                             }
@@ -3097,6 +3397,34 @@ fun StaffConsoleDialog(
                                             Text("Client: ${order.customerName} (${order.customerPhone})", fontSize = 11.sp, color = MutedSlate)
                                             Text("Items: ${order.orderItemsText}", fontSize = 11.sp, color = MutedSlate, fontStyle = FontStyle.Italic)
                                             Text("Total Paid: ₹${String.format(Locale.US, "%.2f", order.totalAmount)}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = GoldPrimary)
+
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                val pMethod = order.paymentMethod
+                                                val pStatus = order.paymentStatus
+                                                val methodLabel = if (pMethod == "Online") "💳 Online" else "💵 COD"
+                                                val isPaid = pStatus == "Paid"
+                                                val statusLabel = if (isPaid) "Paid ✅" else "Unpaid ⏳"
+                                                val statusCol = if (isPaid) Color(0xFF43A047) else Color(0xFFFB8C00)
+
+                                                Text("Payment: $methodLabel ($statusLabel)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = statusCol)
+
+                                                if (!isPaid) {
+                                                    Button(
+                                                        onClick = { viewModel.updateOrderPayment(order, pMethod, "Paid") },
+                                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE8F5E9), contentColor = Color(0xFF2E7D32)),
+                                                        shape = RoundedCornerShape(6.dp),
+                                                        modifier = Modifier.height(24.dp),
+                                                        contentPadding = PaddingValues(horizontal = 8.dp)
+                                                    ) {
+                                                        Text("💵 Received (Paid)", fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                                    }
+                                                }
+                                            }
 
                                             if (order.status != "Served") {
                                                 Spacer(modifier = Modifier.height(8.dp))

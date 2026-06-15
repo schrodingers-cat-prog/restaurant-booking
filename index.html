@@ -73,6 +73,20 @@
         ::-webkit-scrollbar-thumb:hover {
             opacity: 0.4;
         }
+        @keyframes slideUp {
+            from { transform: translateY(2rem); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slideUp {
+            animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
@@ -132,6 +146,9 @@
         <button onclick="toggleDeployModal()" class="underline font-medium hover:text-gold-primary">Show Setup Guide</button>
         <button onclick="document.getElementById('vercel-toast').style.display='none'" class="text-muted-slate hover:text-dark-text ml-2">✕</button>
     </div>
+
+    <!-- Dynamic Reservation Reminder Alert Top Banner -->
+    <div id="reservation-reminder-banners" class="max-w-6xl w-full mx-auto px-4 mt-4 hidden"></div>
 
     <!-- Main Content Grid -->
     <main class="flex-grow max-w-6xl w-full mx-auto p-4 pb-24 md:pb-8">
@@ -713,6 +730,17 @@
                             <label class="block font-semibold text-muted-slate mb-1">Contact Phone Number</label>
                             <input type="tel" id="cart-customer-phone" required placeholder="e.g. +91 78900 20002" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gold-primary" />
                         </div>
+                        <div>
+                            <label class="block font-semibold text-muted-slate mb-1">Payment Method Choice</label>
+                            <div class="grid grid-cols-2 gap-2" id="payment-method-selector">
+                                <button onclick="setCheckoutPaymentMethod('COD')" id="btn-checkout-cod" type="button" class="py-2.5 px-2 border-2 border-gold-primary bg-orange-50 text-gold-primary text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition">
+                                    💵 Cash On Delivery
+                                </button>
+                                <button onclick="setCheckoutPaymentMethod('Online')" id="btn-checkout-online" type="button" class="py-2.5 px-2 border-2 border-transparent bg-sand-bg hover:bg-orange-50/50 text-muted-slate text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition">
+                                    💳 Online Payment
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -753,6 +781,115 @@
                 <button onclick="closeReceiptModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl py-2.5 text-xs font-semibold transition">
                     Done & Close
                 </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODAL 6: SIMULATED INSTANT ONLINE PAYMENT GATEWAY -->
+    <div id="modal-payment-gateway" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-orange-100 overflow-hidden transform transition-all duration-300">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-orange-600 to-amber-500 text-white p-5 flex items-center justify-between">
+                <div>
+                    <h3 class="text-base font-black tracking-tight">Ichiraku Secure Pay Gateway 🔐</h3>
+                    <p class="text-[10px] text-orange-100 font-medium">Verified Sandbox Transaction Suite</p>
+                </div>
+                <button onclick="closePaymentGateway()" class="text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-full transition">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                </button>
+            </div>
+
+            <div class="p-5 space-y-4">
+                <!-- Simple Overview -->
+                <div class="bg-orange-50/50 p-4 rounded-2xl border border-orange-100 text-center space-y-1">
+                    <p class="text-xs text-muted-slate font-semibold uppercase tracking-wider">Amount Due to Pay</p>
+                    <p class="text-2xl font-black text-gold-primary" id="payment-gateway-amount">₹0.00</p>
+                    <p class="text-[10px] text-slate-400">Merchant: Ichiraku Ramen Hub Ltd.</p>
+                </div>
+
+                <!-- Payment Methods Inside Gateway -->
+                <div class="space-y-3">
+                    <label class="block text-[10px] uppercase tracking-wider font-extrabold text-muted-slate">Select Online Payment Route</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <!-- UPI Route Button -->
+                        <button onclick="setGatewayRoute('upi')" id="route-upi-btn" class="py-3 px-3 border-2 border-gold-primary bg-orange-50 text-gold-primary text-xs font-bold rounded-xl flex flex-col items-center gap-1.5 transition">
+                            <span class="text-lg">📲</span>
+                            <span>UPI (GPay/PhonePe)</span>
+                        </button>
+                        <!-- Card Route Button -->
+                        <button onclick="setGatewayRoute('card')" id="route-card-btn" class="py-3 px-3 border-2 border-transparent bg-sand-bg hover:bg-orange-50/50 text-muted-slate text-xs font-semibold rounded-xl flex flex-col items-center gap-1.5 transition">
+                            <span class="text-lg">💳</span>
+                            <span>Debit/Credit Card</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- UPI Specific Route Pane -->
+                <div id="payment-upi-pane" class="space-y-3 pt-1">
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col items-center text-center space-y-2">
+                        <!-- Simulated QR Code SVG -->
+                        <div class="bg-white p-2 rounded-xl border border-slate-200">
+                            <svg class="w-28 h-28 text-slate-800" viewBox="0 0 100 100" fill="currentColor">
+                                <rect width="100" height="100" fill="white"/>
+                                <rect x="5" y="5" width="25" height="25" fill="black"/>
+                                <rect x="10" y="10" width="15" height="15" fill="white"/>
+                                <rect x="12" y="12" width="11" height="11" fill="black"/>
+                                
+                                <rect x="70" y="5" width="25" height="25" fill="black"/>
+                                <rect x="75" y="10" width="15" height="15" fill="white"/>
+                                <rect x="77" y="12" width="11" height="11" fill="black"/>
+                                
+                                <rect x="5" y="70" width="25" height="25" fill="black"/>
+                                <rect x="10" y="75" width="15" height="15" fill="white"/>
+                                <rect x="12" y="77" width="11" height="11" fill="black"/>
+
+                                <!-- Random QR Code blocks -->
+                                <rect x="40" y="15" width="10" height="15" fill="black"/>
+                                <rect x="55" y="5" width="10" height="10" fill="black"/>
+                                <rect x="45" y="35" width="15" height="15" fill="black"/>
+                                <rect x="75" y="45" width="15" height="10" fill="black"/>
+                                <rect x="15" y="45" width="15" height="15" fill="black"/>
+                                <rect x="35" y="65" width="15" height="25" fill="black"/>
+                                <rect x="65" y="65" width="25" height="10" fill="black"/>
+                                <rect x="75" y="75" width="15" height="15" fill="black"/>
+                                <rect x="55" y="80" width="10" height="15" fill="black"/>
+                            </svg>
+                        </div>
+                        <p class="text-[10px] text-muted-slate font-medium">Scan QR Code using your preferred UPI App or click pay below</p>
+                        <div class="w-full">
+                            <input id="pay-upi-id" type="text" placeholder="e.g. naruto@upi" value="ninja@okaxis" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-gold-primary text-center text-dark-text" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Specific Route Pane -->
+                <div id="payment-card-pane" class="space-y-2.5 pt-1 hidden animate-fadeIn">
+                    <div>
+                        <label class="block text-[10px] font-bold text-muted-slate mb-1">Card Number</label>
+                        <input type="text" placeholder="4111 2222 3333 4444" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-gold-primary text-dark-text" />
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-muted-slate mb-1">Expiry Date</label>
+                            <input type="text" placeholder="MM/YY" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-gold-primary text-dark-text" />
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-muted-slate mb-1">CVV / Security Code</label>
+                            <input type="password" placeholder="•••" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-gold-primary text-dark-text" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <div class="space-y-2 pt-2">
+                    <button onclick="submitSimulatedPayment()" class="w-full bg-gold-primary hover:bg-gold-primary-dark text-white rounded-2xl py-3.5 text-sm font-bold flex items-center justify-center gap-1.5 shadow transition-all duration-200 hover:scale-[1.01]">
+                        🔒 Securely Settle Amount Now
+                    </button>
+                    <button onclick="closePaymentGateway()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl py-2.5 text-xs font-semibold transition">
+                        Cancel Payment
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -908,7 +1045,8 @@
             activeHistorySubTab: 'orders', // 'orders' or 'bookings'
             staffActiveSubTab: 'orders', // 'orders' or 'bookings'
             reviewComposerRating: 5,
-            checkoutDeliveryType: 'Dine-In'
+            checkoutDeliveryType: 'Dine-In',
+            checkoutPaymentMethod: 'COD'
         };
 
         // Initialize state on DOM load
@@ -1077,6 +1215,7 @@
             updateCartSidebar();
             updateHistoryScreen();
             updateStaffScreen();
+            renderReservationReminders();
         }
 
         // --------------------------------------------------------------------
@@ -1697,10 +1836,93 @@
         function openCart() {
             updateCartSidebar();
             document.getElementById('modal-cart').classList.remove('hidden');
+            setCheckoutPaymentMethod(state.checkoutPaymentMethod || 'COD');
         }
 
         function closeCart() {
             document.getElementById('modal-cart').classList.add('hidden');
+        }
+
+        function setCheckoutPaymentMethod(method) {
+            state.checkoutPaymentMethod = method;
+            const btnCod = document.getElementById('btn-checkout-cod');
+            const btnOnline = document.getElementById('btn-checkout-online');
+            if (!btnCod || !btnOnline) return;
+
+            const activeClass = "py-2.5 px-2 border-2 border-gold-primary bg-orange-50 text-gold-primary text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition duration-150 shadow-sm";
+            const inactiveClass = "py-2.5 px-2 border-2 border-transparent bg-sand-bg hover:bg-orange-50/50 text-muted-slate text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition duration-150";
+
+            btnCod.className = method === 'COD' ? activeClass : inactiveClass;
+            btnOnline.className = method === 'Online' ? activeClass : inactiveClass;
+        }
+
+        // Keep track of which order is paying inside the gateway
+        let currentPayingOrderId = null;
+        let selectedGatewayRoute = 'upi'; // 'upi' or 'card'
+
+        function changeOrderPaymentMethod(orderId, method) {
+            const order = state.orders.find(o => o.id === orderId);
+            if (order) {
+                order.paymentMethod = method;
+                if (order.paymentStatus !== 'Paid') {
+                    if (method === 'COD') {
+                        order.paymentStatus = 'COD - Unpaid';
+                    } else {
+                        order.paymentStatus = 'Unpaid';
+                    }
+                }
+                saveToLocalStorage();
+                updateUI();
+                playChimeSound('success');
+            }
+        }
+
+        function openPaymentGateway(orderId, amount) {
+            currentPayingOrderId = orderId;
+            document.getElementById('payment-gateway-amount').textContent = `₹${amount.toFixed(2)}`;
+            setGatewayRoute('upi'); // reset to default
+            document.getElementById('modal-payment-gateway').classList.remove('hidden');
+        }
+
+        function closePaymentGateway() {
+            document.getElementById('modal-payment-gateway').classList.add('hidden');
+            currentPayingOrderId = null;
+        }
+
+        function setGatewayRoute(route) {
+            selectedGatewayRoute = route;
+            const btnUpi = document.getElementById('route-upi-btn');
+            const btnCard = document.getElementById('route-card-btn');
+            const paneUpi = document.getElementById('payment-upi-pane');
+            const paneCard = document.getElementById('payment-card-pane');
+
+            const activeClass = "py-3 px-3 border-2 border-gold-primary bg-orange-50 text-gold-primary text-xs font-bold rounded-xl flex flex-col items-center gap-1.5 transition-all duration-200";
+            const inactiveClass = "py-3 px-3 border-2 border-transparent bg-sand-bg hover:bg-orange-50/50 text-muted-slate text-xs font-semibold rounded-xl flex flex-col items-center gap-1.5 transition-all duration-200";
+
+            btnUpi.className = route === 'upi' ? activeClass : inactiveClass;
+            btnCard.className = route === 'card' ? activeClass : inactiveClass;
+
+            if (route === 'upi') {
+                paneUpi.classList.remove('hidden');
+                paneCard.classList.add('hidden');
+            } else {
+                paneUpi.classList.add('hidden');
+                paneCard.classList.remove('hidden');
+            }
+        }
+
+        function submitSimulatedPayment() {
+            if (!currentPayingOrderId) return;
+            const order = state.orders.find(o => o.id === currentPayingOrderId);
+            if (order) {
+                order.paymentStatus = 'Paid';
+                order.paymentMethod = 'Online';
+                saveToLocalStorage();
+                closePaymentGateway();
+                updateUI();
+                playChimeSound('success');
+                alert("✨ Sumptuous payment successfully authorized! Your delicious ramen is paid for.");
+            }
         }
 
         function setDeliveryType(type) {
@@ -1747,6 +1969,7 @@
             }
             const grandTotal = subtotal + 30;
 
+            const selectedMethod = state.checkoutPaymentMethod || 'COD';
             const newOrder = {
                 id: Date.now(),
                 branchId: state.selectedBranchId,
@@ -1757,11 +1980,14 @@
                 totalAmount: grandTotal,
                 deliveryType: state.checkoutDeliveryType,
                 timestamp: Date.now(),
-                status: "Placed"
+                status: "Placed",
+                paymentMethod: selectedMethod,
+                paymentStatus: selectedMethod === 'Online' ? 'Unpaid' : 'COD - Unpaid'
             };
 
             state.orders.unshift(newOrder);
             state.cart = {}; // Empty cart
+            state.checkoutPaymentMethod = 'COD'; // Reset default
             saveToLocalStorage();
             playChimeSound('success');
             
@@ -2028,6 +2254,40 @@
                             </div>
                         </div>
 
+                        <!-- Payment option details tracked on the order card -->
+                        <div class="bg-orange-50/40 p-3 rounded-2xl border border-orange-100/40 space-y-2">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="font-bold text-slate-500 text-[10px] uppercase tracking-wider">Payment Route:</span>
+                                <span class="font-extrabold px-2.5 py-0.5 rounded-full text-[10px] uppercase ${o.paymentStatus === 'Paid' ? 'text-green-700 bg-green-50 border border-green-200' : 'text-amber-700 bg-amber-50 border border-amber-200'}">
+                                    ${o.paymentStatus === 'Paid' ? 'Paid Online ✅' : (o.paymentMethod === 'Online' ? 'Online Pay - Pending 💳' : 'Cash On Delivery - Unpaid 💵')}
+                                </span>
+                            </div>
+                            
+                            ${o.paymentStatus !== 'Paid' ? `
+                            <div class="flex flex-col gap-1.5 pt-1 border-t border-orange-100/30">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-[9px] text-muted-slate font-extrabold uppercase tracking-wider">Modify Choice:</span>
+                                    <div class="flex gap-1">
+                                        <button onclick="changeOrderPaymentMethod(${o.id}, 'COD')" class="text-[9px] px-2.5 py-1 rounded-lg border font-bold transition ${o.paymentMethod === 'COD' || !o.paymentMethod ? 'bg-gold-primary text-white border-transparent' : 'bg-white text-muted-slate border-gray-200 hover:bg-slate-50'}">
+                                            💵 COD
+                                        </button>
+                                        <button onclick="changeOrderPaymentMethod(${o.id}, 'Online')" class="text-[9px] px-2.5 py-1 rounded-lg border font-bold transition ${o.paymentMethod === 'Online' ? 'bg-gold-primary text-white border-transparent' : 'bg-white text-muted-slate border-gray-200 hover:bg-slate-50'}">
+                                            💳 Online
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <button onclick="openPaymentGateway(${o.id}, ${o.totalAmount})" class="w-full mt-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-extrabold text-[10px] uppercase tracking-wider py-2 px-3 rounded-xl transition shadow flex items-center justify-center gap-1.5 animate-pulse">
+                                    ⚡ Secure Online Checkout (₹${o.totalAmount.toFixed(2)})
+                                </button>
+                            </div>
+                            ` : `
+                            <div class="text-[10px] text-emerald-700 font-bold text-center bg-emerald-50 py-1.5 rounded-xl border border-emerald-100">
+                                🎉 Transaction Succeeded! Settle complete.
+                            </div>
+                            `}
+                        </div>
+
                         <div class="flex items-center justify-between pt-2 border-t border-orange-50/50">
                             <span class="text-sm font-extrabold text-gold-primary">Total Amount: ₹${o.totalAmount.toFixed(2)}</span>
                             <div class="flex items-center gap-2">
@@ -2219,6 +2479,21 @@
                                 <strong>Items:</strong> <span class="text-muted-slate italic">${o.orderItemsText}</span>
                             </div>
                             <div class="font-extrabold text-gold-primary-dark pt-1">Grand Total Amount: ₹${o.totalAmount.toFixed(2)}</div>
+                            
+                            <div class="border-t border-orange-100/30 pt-1 mt-1 flex items-center justify-between text-[11px]">
+                                <span><strong>Payment Option:</strong> ${o.paymentMethod === 'Online' ? '💳 Online' : '💵 Cash On Delivery'}</span>
+                                <span class="font-bold px-2 py-0.5 rounded text-[10px] ${o.paymentStatus === 'Paid' ? 'text-emerald-700 bg-emerald-50 border border-emerald-100' : 'text-amber-700 bg-amber-50 border border-amber-100'}">
+                                    ${o.paymentStatus === 'Paid' ? 'Paid ✅' : 'Unpaid ⏳'}
+                                </span>
+                            </div>
+                            
+                            ${o.paymentStatus !== 'Paid' ? `
+                            <div class="pt-1.5 flex justify-end">
+                                <button onclick="markOrderPaidFromStaff(${o.id})" class="text-[10px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold px-2.5 py-1 rounded-lg transition">
+                                    💵 Mark Cash/UPI Received (Paid)
+                                </button>
+                            </div>
+                            ` : ''}
                         </div>
 
                         ${actionSection}
@@ -2368,6 +2643,16 @@
                 state.orders[index].status = nextStatus;
                 saveToLocalStorage();
                 updateUI();
+            }
+        }
+
+        function markOrderPaidFromStaff(orderId) {
+            const order = state.orders.find(o => o.id === orderId);
+            if (order) {
+                order.paymentStatus = 'Paid';
+                saveToLocalStorage();
+                updateUI();
+                playChimeSound('success');
             }
         }
 
@@ -2560,6 +2845,190 @@
                 }
             }
             playChimeSound('click');
+        }
+
+        function parseBookingDateTime(dateStr, timeStr) {
+            if (!dateStr) return null;
+            let parts = [];
+            if (dateStr.includes('/')) {
+                parts = dateStr.split('/'); // [DD, MM, YYYY]
+                if (parts.length === 3) {
+                    const day = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10);
+                    const year = parseInt(parts[2], 10);
+                    return createDateFromParts(year, month, day, timeStr);
+                }
+            } else if (dateStr.includes('-')) {
+                parts = dateStr.split('-'); // Can be [YYYY, MM, DD] or [DD, MM, YYYY]
+                if (parts.length === 3) {
+                    if (parts[0].length === 4) { // YYYY-MM-DD
+                        const year = parseInt(parts[0], 10);
+                        const month = parseInt(parts[1], 10);
+                        const day = parseInt(parts[2], 10);
+                        return createDateFromParts(year, month, day, timeStr);
+                    } else { // DD-MM-YYYY
+                        const day = parseInt(parts[0], 10);
+                        const month = parseInt(parts[1], 10);
+                        const year = parseInt(parts[2], 10);
+                        return createDateFromParts(year, month, day, timeStr);
+                    }
+                }
+            }
+            return null;
+        }
+
+        function createDateFromParts(year, month, day, timeStr) {
+            let hour = 19;
+            let minute = 0;
+            if (timeStr && timeStr.includes(':')) {
+                const tParts = timeStr.split(':');
+                hour = parseInt(tParts[0], 10) || 19;
+                minute = parseInt(tParts[1], 10) || 0;
+            }
+            return new Date(year, month - 1, day, hour, minute, 0);
+        }
+
+        function renderReservationReminders() {
+            const container = document.getElementById('reservation-reminder-banners');
+            if (!container) return;
+
+            let dismissedIds = [];
+            try {
+                dismissedIds = JSON.parse(localStorage.getItem('ichiraku_dismissed_reminders')) || [];
+            } catch(e) {}
+
+            const now = new Date();
+            const activeReminders = state.bookings.filter(b => {
+                if (dismissedIds.includes(b.id)) return false;
+                
+                const bookingDate = parseBookingDateTime(b.date, b.time);
+                if (!bookingDate) return false;
+
+                const diffMs = bookingDate.getTime() - now.getTime();
+                const diffHours = diffMs / (3600 * 1000);
+                
+                return diffHours >= -2 && diffHours <= 24;
+            });
+
+            if (activeReminders.length === 0) {
+                container.innerHTML = '';
+                container.classList.add('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
+            container.innerHTML = activeReminders.map(b => {
+                const bookingDate = parseBookingDateTime(b.date, b.time);
+                const diffMs = bookingDate.getTime() - now.getTime();
+                const diffHours = diffMs / (3600 * 1000);
+
+                let countdownText = "";
+                if (diffHours < 0) {
+                    countdownText = `Active now / in progress! 🍜`;
+                } else {
+                    const hrs = Math.floor(diffHours);
+                    const mins = Math.round((diffHours % 1) * 60);
+                    countdownText = `⏱️ Starts in ${hrs}h ${mins}m!`;
+                }
+
+                return `
+                <div class="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-orange-200 rounded-3xl p-4 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-fadeIn relative overflow-hidden mb-3">
+                    <div class="absolute right-0 top-0 translate-x-4 -translate-y-4 text-orange-200/25 text-7xl font-bold select-none pointer-events-none">📅</div>
+                    <div class="flex items-start gap-3 z-10">
+                        <span class="flex items-center justify-center bg-orange-500 text-white p-3 rounded-2xl text-lg animate-bounce shadow">🔔</span>
+                        <div>
+                            <h3 class="text-xs md:text-sm font-black text-orange-950 uppercase tracking-tight flex items-center flex-wrap gap-1.5">
+                                Reservation Reminder: ${b.tableName || 'Selected Table'}
+                                <span class="bg-orange-500 text-white text-[9px] font-black tracking-normal px-2 py-0.5 rounded-full uppercase">Within 24 Hours</span>
+                            </h3>
+                            <p class="text-xs text-orange-900/90 font-medium mt-1">
+                                Honorable <strong>${b.customerName}</strong>, your table at <strong>${b.branchName}</strong> is reserved on <span class="underline font-bold">${b.date}</span> at <span class="underline font-bold">${b.time}</span>.
+                            </p>
+                            <p class="text-[10px] text-orange-700 font-bold mt-1">
+                                ${countdownText} Prepare your appetite!
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 self-stretch md:self-center justify-end z-10">
+                        <button onclick="state.activeHistorySubTab = 'bookings'; switchTab(2);" class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold text-[10px] uppercase tracking-wider py-2 px-4 rounded-xl transition shadow hover:scale-[1.01]">
+                            View Receipt
+                        </button>
+                        <button onclick="dismissReservationReminder(${b.id})" class="bg-orange-100 hover:bg-orange-200 text-orange-900 p-2 rounded-xl text-xs font-semibold transition" title="Dismiss Reminder">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            if (window.shownToastReminders === undefined) {
+                window.shownToastReminders = [];
+            }
+            activeReminders.forEach(b => {
+                if (!window.shownToastReminders.includes(b.id)) {
+                    window.shownToastReminders.push(b.id);
+                    showFloatingReminderToast(b);
+                }
+            });
+        }
+
+        function dismissReservationReminder(bookingId) {
+            let dismissedIds = [];
+            try {
+                dismissedIds = JSON.parse(localStorage.getItem('ichiraku_dismissed_reminders')) || [];
+            } catch(e) {}
+            if (!dismissedIds.includes(bookingId)) {
+                dismissedIds.push(bookingId);
+                localStorage.setItem('ichiraku_dismissed_reminders', JSON.stringify(dismissedIds));
+            }
+            renderReservationReminders();
+        }
+
+        function showFloatingReminderToast(b) {
+            let container = document.getElementById('floating-toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'floating-toast-container';
+                container.className = 'fixed bottom-6 right-6 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-auto';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = 'bg-white rounded-2xl shadow-2xl border-2 border-orange-200 p-4 transform transition-all duration-300 translate-y-10 opacity-0 overflow-hidden relative flex flex-col gap-2 animate-slideUp';
+            toast.innerHTML = `
+                <div class="flex items-center gap-2 border-b border-orange-50 pb-2">
+                    <span class="text-base">⏰</span>
+                    <h4 class="text-xs font-black text-orange-950 uppercase tracking-wider">Upcoming Reservation</h4>
+                    <span class="ml-auto bg-orange-500 text-white text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase">Within 24h</span>
+                </div>
+                <p class="text-xs text-muted-slate font-medium">
+                    Hello, <strong>${b.customerName}</strong>! Your table <strong>${b.tableName || b.tableId}</strong> at <strong>${b.branchName}</strong> is coming up soon.
+                </p>
+                <div class="flex items-center justify-between text-[11px] font-bold text-gold-primary">
+                    <span>📅 ${b.date} @ ${b.time}</span>
+                    <span>👤 ${b.guestsCount} Guests</span>
+                </div>
+                <div class="flex gap-2 mt-1">
+                    <button onclick="this.parentElement.parentElement.remove(); state.activeHistorySubTab = 'bookings'; switchTab(2);" class="flex-grow bg-gold-primary hover:bg-gold-primary-dark text-white text-[10px] font-bold uppercase tracking-wider py-1.5 rounded-lg text-center transition">
+                        View
+                    </button>
+                    <button onclick="this.parentElement.parentElement.remove();" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg transition">
+                        Close
+                    </button>
+                </div>
+            `;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-10', 'opacity-0');
+            }, 100);
+
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.classList.add('translate-y-10', 'opacity-0');
+                    setTimeout(() => { toast.remove(); }, 300);
+                }
+            }, 10000);
         }
 
         // Vercel popup guide helper

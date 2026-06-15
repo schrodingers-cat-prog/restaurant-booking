@@ -45,6 +45,13 @@ class RestaurantViewModel(application: Application) : AndroidViewModel(applicati
     private val _defaultPartySize = MutableStateFlow(prefs.getInt("settings_default_party_size", 2))
     val defaultPartySize: StateFlow<Int> = _defaultPartySize.asStateFlow()
 
+    private val _dismissedBookings = MutableStateFlow<Set<Int>>(emptySet())
+    val dismissedBookings: StateFlow<Set<Int>> = _dismissedBookings.asStateFlow()
+
+    fun dismissBookingReminder(bookingId: Int) {
+        _dismissedBookings.value = _dismissedBookings.value + bookingId
+    }
+
     fun updateTheme(themeName: String) {
         prefs.edit().putString("settings_theme", themeName).apply()
         _currentTheme.value = themeName
@@ -173,6 +180,7 @@ class RestaurantViewModel(application: Application) : AndroidViewModel(applicati
         customerName: String,
         customerPhone: String,
         deliveryType: String,
+        paymentMethod: String,
         onComplete: (Order) -> Unit
     ) {
         val selectedId = _selectedBranchId.value ?: 1
@@ -193,12 +201,21 @@ class RestaurantViewModel(application: Application) : AndroidViewModel(applicati
                 orderItemsText = itemsText,
                 totalAmount = total,
                 deliveryType = deliveryType,
-                status = "Placed"
+                status = "Placed",
+                paymentMethod = paymentMethod,
+                paymentStatus = if (paymentMethod == "Online") "Unpaid" else "Unpaid"
             )
             val generatedId = repository.insertOrder(order)
             val savedOrder = order.copy(id = generatedId.toInt())
             clearCart()
             onComplete(savedOrder)
+        }
+    }
+
+    // Update Order Payment Method & Status
+    fun updateOrderPayment(order: Order, paymentMethod: String, paymentStatus: String) {
+        viewModelScope.launch {
+            repository.updateOrder(order.copy(paymentMethod = paymentMethod, paymentStatus = paymentStatus))
         }
     }
 
@@ -262,5 +279,44 @@ class RestaurantViewModel(application: Application) : AndroidViewModel(applicati
                 "💬 *Special Request*: $requestsText\n" +
                 "--------------------------------------\n\n" +
                 "We look forward to serving your hot broth! Thank you for choosing Ichiraku Ramen!"
+    }
+
+    fun parseBookingTimestamp(dateStr: String, timeStr: String): Long? {
+        val cleanDate = dateStr.trim()
+        val cleanTime = timeStr.trim().ifEmpty { "19:00" }
+        val fullDateTimeStr = "$cleanDate $cleanTime"
+
+        val patterns = listOf(
+            "dd/MM/yyyy HH:mm",
+            "d/M/yyyy HH:mm",
+            "dd-MM-yyyy HH:mm",
+            "yyyy-MM-dd HH:mm",
+            "dd/MM/yyyy h:mm a",
+            "yyyy-MM-dd h:mm a",
+            "dd/MM/yyyy h:mm a",
+            "dd/MM/yyyy HH:mm"
+        )
+
+        for (pattern in patterns) {
+            try {
+                val sdf = SimpleDateFormat(pattern, Locale.US)
+                sdf.isLenient = false
+                val parsedDate = sdf.parse(fullDateTimeStr)
+                if (parsedDate != null) {
+                    return parsedDate.time
+                }
+            } catch (e: Exception) {
+                // Try next
+            }
+        }
+        return null
+    }
+
+    fun isBookingWithin24Hours(booking: Booking): Boolean {
+        val timestamp = parseBookingTimestamp(booking.date, booking.time) ?: return false
+        val now = System.currentTimeMillis()
+        val diffMs = timestamp - now
+        val diffHours = diffMs.toDouble() / (3600 * 1000)
+        return diffHours >= -2.0 && diffHours <= 24.0
     }
 }
